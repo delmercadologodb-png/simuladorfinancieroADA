@@ -1,0 +1,2550 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador de Impacto Financiero</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0f1117;
+  --ink-light: #3a3d4a;
+  --ink-muted: #7a7f94;
+  --surface: #f7f6f2;
+  --surface-2: #eeecea;
+  --surface-3: #e4e1dc;
+  --gold: #c9a84c;
+  --gold-light: #f0d98a;
+  --gold-dark: #a07830;
+  --green: #2d6a4f;
+  --green-light: #52b788;
+  --green-pale: #d8f3dc;
+  --red: #9b2335;
+  --red-light: #e76f51;
+  --red-pale: #fde8e4;
+  --blue: #1d3557;
+  --blue-light: #457b9d;
+  --blue-pale: #dde9f4;
+  --amber: #e9c46a;
+  --white: #ffffff;
+  --shadow-sm: 0 1px 3px rgba(15,17,23,0.08), 0 1px 2px rgba(15,17,23,0.06);
+  --shadow-md: 0 4px 16px rgba(15,17,23,0.10), 0 2px 6px rgba(15,17,23,0.07);
+  --shadow-lg: 0 12px 40px rgba(15,17,23,0.14), 0 4px 12px rgba(15,17,23,0.08);
+  --radius: 12px;
+  --radius-lg: 20px;
+  --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--surface);
+  color: var(--ink);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── SCREENS ─── */
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; }
+
+/* ═══════════════════════════════════════════
+   LOGIN SCREEN
+═══════════════════════════════════════════ */
+#login-screen {
+  align-items: center;
+  justify-content: center;
+  background: var(--ink);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-bg {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 50%, rgba(201,168,76,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 80% at 80% 30%, rgba(45,106,79,0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 60% 80%, rgba(29,53,87,0.15) 0%, transparent 50%);
+}
+
+.login-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(201,168,76,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201,168,76,0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+.login-card {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  margin: 24px;
+  background: rgba(247,246,242,0.04);
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: var(--radius-lg);
+  padding: 52px 44px;
+  backdrop-filter: blur(20px);
+  animation: fadeUp 0.6s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.login-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 36px;
+}
+
+.login-logo-icon {
+  width: 44px; height: 44px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+}
+
+.login-logo-text {
+  font-family: 'DM Serif Display', serif;
+  color: var(--white);
+  font-size: 15px;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+}
+
+.login-logo-text span {
+  display: block;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.login-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px;
+  color: var(--white);
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+
+.login-subtitle {
+  font-size: 13px;
+  color: rgba(255,255,255,0.45);
+  margin-bottom: 36px;
+  letter-spacing: 0.02em;
+}
+
+.form-group { margin-bottom: 20px; }
+
+.form-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 8px;
+}
+
+.form-input {
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 13px 16px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: var(--white);
+  transition: var(--transition);
+  outline: none;
+}
+
+.form-input::placeholder { color: rgba(255,255,255,0.25); }
+.form-input:focus {
+  border-color: rgba(201,168,76,0.5);
+  background: rgba(255,255,255,0.09);
+  box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
+}
+
+.login-error {
+  display: none;
+  background: rgba(155,35,53,0.2);
+  border: 1px solid rgba(155,35,53,0.4);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #f4a0a0;
+  margin-bottom: 20px;
+}
+.login-error.show { display: block; }
+
+.btn-login {
+  width: 100%;
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  border: none;
+  border-radius: 8px;
+  padding: 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: var(--transition);
+  letter-spacing: 0.03em;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-login:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(201,168,76,0.35); }
+.btn-login:active { transform: translateY(0); }
+.btn-login:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.btn-login .spinner {
+  display: none;
+  width: 16px; height: 16px;
+  border: 2px solid rgba(15,17,23,0.3);
+  border-top-color: var(--ink);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin: 0 auto;
+}
+.btn-login.loading .spinner { display: block; }
+.btn-login.loading .btn-text { display: none; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.login-footer {
+  margin-top: 28px;
+  text-align: center;
+  font-size: 11px;
+  color: rgba(255,255,255,0.2);
+  letter-spacing: 0.05em;
+}
+
+/* ═══════════════════════════════════════════
+   APP LAYOUT
+═══════════════════════════════════════════ */
+#app-screen {
+  flex-direction: column;
+  background: var(--surface);
+}
+
+/* TOP NAV */
+.topnav {
+  background: var(--ink);
+  padding: 0 32px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(15,17,23,0.3);
+}
+
+.topnav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topnav-icon {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.topnav-title {
+  font-family: 'DM Serif Display', serif;
+  color: var(--white);
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.topnav-title small {
+  display: block;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.topnav-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topnav-username {
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+}
+
+.topnav-username strong {
+  color: var(--white);
+  font-weight: 600;
+}
+
+.btn-logout {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.btn-logout:hover { background: rgba(255,255,255,0.14); color: var(--white); }
+
+/* MAIN CONTENT */
+.app-content {
+  flex: 1;
+  padding: 32px;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ─── MODULE SCREENS ─── */
+.module { display: none; }
+.module.active { display: block; }
+
+/* ═══════════════════════════════════════════
+   WELCOME / HOME
+═══════════════════════════════════════════ */
+.welcome-header {
+  margin-bottom: 40px;
+}
+
+.welcome-greeting {
+  font-size: 13px;
+  color: var(--ink-muted);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.welcome-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 36px;
+  color: var(--ink);
+  line-height: 1.15;
+  margin-bottom: 12px;
+}
+
+.welcome-title em {
+  font-style: italic;
+  color: var(--gold-dark);
+}
+
+.welcome-subtitle {
+  font-size: 15px;
+  color: var(--ink-muted);
+  max-width: 520px;
+}
+
+.modules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.module-card {
+  background: var(--white);
+  border: 1px solid var(--surface-3);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.module-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--card-accent, var(--gold));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.module-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: transparent;
+}
+
+.module-card:hover::before { transform: scaleX(1); }
+
+.module-card[data-module="radar"] { --card-accent: var(--gold); }
+.module-card[data-module="historico"] { --card-accent: var(--blue-light); }
+.module-card[data-module="tracking"] { --card-accent: var(--green-light); }
+.module-card[data-module="spend"] { --card-accent: var(--red-light); }
+
+.card-icon {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.module-card[data-module="radar"] .card-icon { background: rgba(201,168,76,0.12); }
+.module-card[data-module="historico"] .card-icon { background: rgba(69,123,157,0.12); }
+.module-card[data-module="tracking"] .card-icon { background: rgba(82,183,136,0.12); }
+.module-card[data-module="spend"] .card-icon { background: rgba(231,111,81,0.12); }
+
+.card-number {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 8px;
+}
+
+.card-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 20px;
+  color: var(--ink);
+  margin-bottom: 10px;
+  line-height: 1.2;
+}
+
+.card-desc {
+  font-size: 13px;
+  color: var(--ink-muted);
+  line-height: 1.6;
+}
+
+.card-arrow {
+  position: absolute;
+  bottom: 28px; right: 28px;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  transition: var(--transition);
+}
+.module-card:hover .card-arrow {
+  background: var(--card-accent, var(--gold));
+  color: var(--white);
+  transform: translateX(2px);
+}
+
+/* ═══════════════════════════════════════════
+   BREADCRUMB & MODULE HEADER
+═══════════════════════════════════════════ */
+.module-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-muted);
+  margin-bottom: 8px;
+}
+
+.breadcrumb a {
+  color: var(--ink-muted);
+  text-decoration: none;
+  cursor: pointer;
+}
+.breadcrumb a:hover { color: var(--gold-dark); }
+.breadcrumb span { color: var(--ink-light); font-weight: 500; }
+
+.module-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.module-subtitle {
+  font-size: 14px;
+  color: var(--ink-muted);
+  margin-top: 4px;
+}
+
+/* ═══════════════════════════════════════════
+   SHARED COMPONENTS
+═══════════════════════════════════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  border: none;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--ink);
+  color: var(--white);
+}
+.btn-primary:hover { background: var(--ink-light); box-shadow: var(--shadow-md); }
+
+.btn-gold {
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  color: var(--ink);
+}
+.btn-gold:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(201,168,76,0.3); }
+
+.btn-outline {
+  background: transparent;
+  border: 1.5px solid var(--surface-3);
+  color: var(--ink-light);
+}
+.btn-outline:hover { border-color: var(--ink-muted); color: var(--ink); background: var(--surface-2); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-muted);
+  padding: 8px 12px;
+}
+.btn-ghost:hover { color: var(--ink); background: var(--surface-2); }
+
+.btn-danger {
+  background: var(--red);
+  color: var(--white);
+}
+.btn-danger:hover { background: #7a1c29; }
+
+.btn-green {
+  background: var(--green);
+  color: var(--white);
+}
+.btn-green:hover { background: #1f4d38; }
+
+.btn-sm { padding: 7px 14px; font-size: 12px; }
+.btn-lg { padding: 13px 28px; font-size: 15px; }
+
+.card {
+  background: var(--white);
+  border: 1px solid var(--surface-3);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+
+.card-lg { padding: 32px; border-radius: var(--radius-lg); }
+
+.section-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 18px;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.section-subtitle {
+  font-size: 13px;
+  color: var(--ink-muted);
+  margin-bottom: 20px;
+}
+
+.divider {
+  height: 1px;
+  background: var(--surface-3);
+  margin: 24px 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.badge-green { background: var(--green-pale); color: var(--green); }
+.badge-red { background: var(--red-pale); color: var(--red); }
+.badge-amber { background: rgba(233,196,106,0.2); color: #92600a; }
+.badge-blue { background: var(--blue-pale); color: var(--blue); }
+.badge-gray { background: var(--surface-2); color: var(--ink-muted); }
+.badge-gold { background: rgba(201,168,76,0.15); color: var(--gold-dark); }
+
+/* FORM ELEMENTS */
+.field-group { margin-bottom: 20px; }
+.field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 6px;
+}
+
+.field-input, .field-select, .field-textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1.5px solid var(--surface-3);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  transition: var(--transition);
+  outline: none;
+}
+
+.field-input:focus, .field-select:focus, .field-textarea:focus {
+  border-color: var(--gold);
+  background: var(--white);
+  box-shadow: 0 0 0 3px rgba(201,168,76,0.12);
+}
+
+.field-textarea { resize: vertical; min-height: 80px; }
+
+.field-row {
+  display: grid;
+  gap: 16px;
+}
+.field-row-2 { grid-template-columns: 1fr 1fr; }
+.field-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+/* TOGGLE BUTTONS */
+.toggle-group {
+  display: flex;
+  background: var(--surface-2);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  background: transparent;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.toggle-btn.active {
+  background: var(--white);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+  font-weight: 600;
+}
+
+/* RISK METER */
+.risk-meter {
+  position: relative;
+}
+
+.risk-bar {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--surface-3);
+  overflow: hidden;
+  margin: 8px 0;
+}
+
+.risk-fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+  background: linear-gradient(90deg, var(--green-light), var(--amber), var(--red-light));
+}
+
+/* TABLE */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.data-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--surface-3);
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--surface-2);
+  color: var(--ink-light);
+  vertical-align: middle;
+}
+
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: var(--surface); }
+.data-table .td-name { color: var(--ink); font-weight: 500; }
+.data-table .td-amount { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.data-table .td-saving { font-weight: 700; color: var(--green); font-variant-numeric: tabular-nums; }
+
+/* STAT CARDS */
+.stats-grid {
+  display: grid;
+  gap: 16px;
+}
+.stats-grid-4 { grid-template-columns: repeat(4, 1fr); }
+.stats-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.stats-grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+.stat-card {
+  background: var(--white);
+  border: 1px solid var(--surface-3);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px;
+  color: var(--ink);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-sub {
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.stat-card.accent-green { border-left: 3px solid var(--green-light); }
+.stat-card.accent-gold { border-left: 3px solid var(--gold); }
+.stat-card.accent-red { border-left: 3px solid var(--red-light); }
+.stat-card.accent-blue { border-left: 3px solid var(--blue-light); }
+
+/* MODAL */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15,17,23,0.6);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 36px;
+  width: 100%;
+  max-width: 720px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalIn 0.3s cubic-bezier(0.4,0,0.2,1) both;
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-lg { max-width: 960px; }
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.modal-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  color: var(--ink);
+}
+
+.modal-subtitle {
+  font-size: 13px;
+  color: var(--ink-muted);
+  margin-top: 4px;
+}
+
+.modal-close {
+  background: var(--surface-2);
+  border: none;
+  border-radius: 8px;
+  width: 32px; height: 32px;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--ink-muted);
+  display: flex; align-items: center; justify-content: center;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+.modal-close:hover { background: var(--surface-3); color: var(--ink); }
+
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--surface-3);
+}
+
+/* LOADING STATE */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  gap: 16px;
+  color: var(--ink-muted);
+  font-size: 14px;
+}
+
+.loader {
+  width: 36px; height: 36px;
+  border: 3px solid var(--surface-3);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* EMPTY STATE */
+.empty-state {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--ink-muted);
+}
+
+.empty-icon { font-size: 48px; margin-bottom: 16px; }
+.empty-title { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--ink-light); margin-bottom: 8px; }
+.empty-desc { font-size: 14px; line-height: 1.6; max-width: 360px; margin: 0 auto 24px; }
+
+/* CHECKLIST */
+.checklist { display: flex; flex-direction: column; gap: 10px; }
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ink-light);
+}
+.check-dot {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.check-dot.yes { background: var(--green-pale); color: var(--green); }
+.check-dot.no { background: var(--red-pale); color: var(--red); }
+.check-dot.pending { background: rgba(233,196,106,0.2); color: #92600a; }
+
+/* INSUMO ITEM IN PROVIDER FORM */
+.insumo-item {
+  background: var(--surface);
+  border: 1.5px solid var(--surface-3);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.insumo-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.insumo-item-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.insumo-item-meta {
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+/* TIMING CHIP */
+.timing-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.timing-chip.inmediato { background: var(--green-pale); color: var(--green); }
+.timing-chip.negociar { background: rgba(233,196,106,0.2); color: #92600a; }
+.timing-chip.buscar { background: var(--red-pale); color: var(--red); }
+
+/* TABS */
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid var(--surface-3);
+  margin-bottom: 24px;
+}
+
+.tab-btn {
+  padding: 10px 20px;
+  border: none;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+
+.tab-btn:hover { color: var(--ink); }
+.tab-btn.active {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom-color: var(--gold);
+}
+
+/* NOTIFICATION TOAST */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--ink);
+  color: var(--white);
+  padding: 14px 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  z-index: 9999;
+  transform: translateY(80px);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 360px;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { background: var(--green); }
+.toast.error { background: var(--red); }
+.toast.warning { background: #92600a; }
+
+/* SUCURSAL PILL */
+.sucursal-selector {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.sucursal-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid var(--surface-3);
+  background: var(--white);
+  color: var(--ink-muted);
+  transition: var(--transition);
+}
+
+.sucursal-pill.active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--white);
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .stats-grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .field-row-3 { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 640px) {
+  .app-content { padding: 16px; }
+  .stats-grid-4, .stats-grid-3, .stats-grid-2 { grid-template-columns: 1fr; }
+  .field-row-2, .field-row-3 { grid-template-columns: 1fr; }
+  .modal { padding: 24px; }
+  .topnav { padding: 0 16px; }
+  .topnav-username { display: none; }
+  .welcome-title { font-size: 26px; }
+}
+
+/* PROGRESS STEPS */
+.steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 32px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+
+.step-num {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 2px solid var(--surface-3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+
+.step.active .step-num {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--white);
+}
+
+.step.done .step-num {
+  background: var(--green);
+  border-color: var(--green);
+  color: var(--white);
+}
+
+.step-line {
+  flex: 1;
+  height: 2px;
+  background: var(--surface-3);
+  margin: 0 8px;
+  min-width: 24px;
+}
+
+.step.done + .step-line { background: var(--green); }
+
+/* COMPARISON TABLE */
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.compare-table th {
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  border-bottom: 2px solid var(--surface-3);
+  text-align: left;
+}
+
+.compare-table th.highlight {
+  background: rgba(45,106,79,0.06);
+  color: var(--green);
+}
+
+.compare-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--surface-2);
+  vertical-align: middle;
+}
+
+.compare-table td.highlight {
+  background: rgba(45,106,79,0.04);
+  font-weight: 700;
+  color: var(--green);
+}
+
+.compare-table tr:last-child td { border-bottom: none; }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-muted); }
+</style>
+</head>
+<body>
+
+<!-- ═══ TOAST ═══ -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════════
+     LOGIN SCREEN
+═══════════════════════════════════════════ -->
+<div class="screen active" id="login-screen">
+  <div class="login-bg"></div>
+  <div class="login-grid"></div>
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">📊</div>
+      <div class="login-logo-text">
+        Simulador de Impacto Financiero
+        <span>& Optimización de Proveedores</span>
+      </div>
+    </div>
+    <h1 class="login-title">Bienvenido</h1>
+    <p class="login-subtitle">Ingresa tus credenciales para acceder al simulador</p>
+    <div class="login-error" id="login-error">Usuario o contraseña incorrectos</div>
+    <div class="form-group">
+      <label class="form-label">Usuario</label>
+      <input type="text" class="form-input" id="login-user" placeholder="Tu nombre de usuario" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Contraseña</label>
+      <input type="password" class="form-input" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-login" id="btn-login" onclick="doLogin()">
+      <span class="btn-text">Ingresar</span>
+      <div class="spinner"></div>
+    </button>
+    <p class="login-footer">Acceso restringido · Solo personal autorizado</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     APP SCREEN
+═══════════════════════════════════════════ -->
+<div class="screen" id="app-screen">
+
+  <!-- TOP NAV -->
+  <nav class="topnav">
+    <div class="topnav-brand" onclick="showModule('home')" style="cursor:pointer">
+      <div class="topnav-icon">📊</div>
+      <div class="topnav-title">
+        Simulador de Impacto Financiero
+        <small>Optimización de Proveedores</small>
+      </div>
+    </div>
+    <div class="topnav-user">
+      <span class="topnav-username">Hola, <strong id="nav-username"></strong></span>
+      <button class="btn-logout" onclick="doLogout()">Cerrar sesión</button>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <div class="app-content">
+
+    <!-- ─── HOME ─── -->
+    <div class="module active" id="module-home">
+      <div class="welcome-header">
+        <p class="welcome-greeting">Panel Principal</p>
+        <h1 class="welcome-title">Bienvenido al Simulador,<br><em id="welcome-name"></em></h1>
+        <p class="welcome-subtitle">Elige el módulo que deseas consultar para comenzar tu análisis.</p>
+      </div>
+      <div class="modules-grid">
+        <div class="module-card" data-module="radar" onclick="showModule('radar')">
+          <div class="card-icon">🎯</div>
+          <p class="card-number">Módulo 01</p>
+          <h3 class="card-title">Medir Impacto de un Nuevo Proveedor en el Radar</h3>
+          <p class="card-desc">Registra y evalúa nuevas opciones de proveedores, calcula ahorros proyectados y analiza el riesgo de cambio.</p>
+          <div class="card-arrow">→</div>
+        </div>
+        <div class="module-card" data-module="historico" onclick="showModule('historico')">
+          <div class="card-icon">📈</div>
+          <p class="card-number">Módulo 02</p>
+          <h3 class="card-title">Desempeño Histórico de Proveedores Actuales</h3>
+          <p class="card-desc">Analiza el comportamiento de precios, volúmenes y consistencia de tus proveedores actuales en el tiempo.</p>
+          <div class="card-arrow">→</div>
+        </div>
+        <div class="module-card" data-module="tracking" onclick="showModule('tracking')">
+          <div class="card-icon">✅</div>
+          <p class="card-number">Módulo 03</p>
+          <h3 class="card-title">Tracking de Ahorros Logrados</h3>
+          <p class="card-desc">Mide el impacto real de los cambios de proveedor ejecutados y compara ahorros proyectados vs reales.</p>
+          <div class="card-arrow">→</div>
+        </div>
+        <div class="module-card" data-module="spend" onclick="showModule('spend')">
+          <div class="card-icon">💰</div>
+          <p class="card-number">Módulo 04</p>
+          <h3 class="card-title">Spend Histórico de Compras</h3>
+          <p class="card-desc">Explora el gasto total histórico por proveedor, insumo, categoría y sucursal con filtros interactivos.</p>
+          <div class="card-arrow">→</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── MÓDULO 1: RADAR ─── -->
+    <div class="module" id="module-radar">
+      <div class="module-header">
+        <div>
+          <div class="breadcrumb">
+            <a onclick="showModule('home')">🏠 Inicio</a>
+            <span>›</span>
+            <span>Nuevo Proveedor en el Radar</span>
+          </div>
+          <h2 class="module-title">Medir Impacto de un Nuevo Proveedor</h2>
+          <p class="module-subtitle">Registra, evalúa y simula el ahorro proyectado de nuevas opciones de proveedores</p>
+        </div>
+      </div>
+
+      <!-- ACTION BUTTONS -->
+      <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:32px;">
+        <button class="btn btn-gold btn-lg" onclick="openRegisterModal()">
+          <span>➕</span> Registrar Proveedor Nuevo en el Radar
+        </button>
+        <button class="btn btn-outline btn-lg" onclick="showRadarList()">
+          <span>📋</span> Consultar Proveedores Agregados
+        </button>
+      </div>
+
+      <!-- RADAR LIST VIEW -->
+      <div id="radar-list-view" style="display:none">
+        <!-- Filters -->
+        <div class="card" style="margin-bottom:20px;">
+          <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+            <div style="flex:1; min-width:200px;">
+              <input type="text" class="field-input" id="radar-search" placeholder="🔍 Buscar proveedor o insumo..." oninput="filterRadarList()">
+            </div>
+            <select class="field-select" id="radar-filter-status" onchange="filterRadarList()" style="width:auto;">
+              <option value="">Todos los estados</option>
+              <option value="radar">En Radar</option>
+              <option value="activo">Activo</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Provider Cards -->
+        <div id="radar-cards-container">
+          <div class="loading-state"><div class="loader"></div><span>Cargando proveedores...</span></div>
+        </div>
+      </div>
+
+      <!-- SINGLE PROVIDER DETAIL VIEW -->
+      <div id="radar-detail-view" style="display:none"></div>
+    </div>
+
+    <!-- ─── MÓDULO 2: HISTÓRICO ─── -->
+    <div class="module" id="module-historico">
+      <div class="module-header">
+        <div>
+          <div class="breadcrumb">
+            <a onclick="showModule('home')">🏠 Inicio</a>
+            <span>›</span>
+            <span>Desempeño Histórico</span>
+          </div>
+          <h2 class="module-title">Desempeño Histórico de Proveedores</h2>
+          <p class="module-subtitle">Análisis de precios, volúmenes y tendencias de tus proveedores actuales</p>
+        </div>
+      </div>
+      <div class="empty-state">
+        <div class="empty-icon">📈</div>
+        <h3 class="empty-title">Módulo en desarrollo</h3>
+        <p class="empty-desc">Este módulo estará disponible próximamente.</p>
+      </div>
+    </div>
+
+    <!-- ─── MÓDULO 3: TRACKING ─── -->
+    <div class="module" id="module-tracking">
+      <div class="module-header">
+        <div>
+          <div class="breadcrumb">
+            <a onclick="showModule('home')">🏠 Inicio</a>
+            <span>›</span>
+            <span>Tracking de Ahorros</span>
+          </div>
+          <h2 class="module-title">Tracking de Ahorros Logrados</h2>
+          <p class="module-subtitle">Mide el impacto real de los cambios de proveedor ejecutados</p>
+        </div>
+      </div>
+      <div class="empty-state">
+        <div class="empty-icon">✅</div>
+        <h3 class="empty-title">Módulo en desarrollo</h3>
+        <p class="empty-desc">Este módulo estará disponible próximamente.</p>
+      </div>
+    </div>
+
+    <!-- ─── MÓDULO 4: SPEND ─── -->
+    <div class="module" id="module-spend">
+      <div class="module-header">
+        <div>
+          <div class="breadcrumb">
+            <a onclick="showModule('home')">🏠 Inicio</a>
+            <span>›</span>
+            <span>Spend Histórico</span>
+          </div>
+          <h2 class="module-title">Spend Histórico de Compras</h2>
+          <p class="module-subtitle">Exploración del gasto total por proveedor, insumo, categoría y sucursal</p>
+        </div>
+      </div>
+      <div class="empty-state">
+        <div class="empty-icon">💰</div>
+        <h3 class="empty-title">Módulo en desarrollo</h3>
+        <p class="empty-desc">Este módulo estará disponible próximamente.</p>
+      </div>
+    </div>
+
+  </div><!-- /app-content -->
+</div><!-- /app-screen -->
+
+<!-- ═══════════════════════════════════════════
+     MODAL: REGISTER NEW PROVIDER
+═══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-register">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title">Registrar Nuevo Proveedor en el Radar</h2>
+        <p class="modal-subtitle">Completa la información para evaluar esta opción</p>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-register')">×</button>
+    </div>
+
+    <!-- STEPS -->
+    <div class="steps">
+      <div class="step active" id="step-1-dot">
+        <div class="step-num">1</div>
+        <span>Datos Generales</span>
+      </div>
+      <div class="step-line" id="step-line-1"></div>
+      <div class="step" id="step-2-dot">
+        <div class="step-num">2</div>
+        <span>Criterios de Calidad</span>
+      </div>
+      <div class="step-line" id="step-line-2"></div>
+      <div class="step" id="step-3-dot">
+        <div class="step-num">3</div>
+        <span>Insumos y Precios</span>
+      </div>
+    </div>
+
+    <!-- STEP 1: DATOS GENERALES -->
+    <div id="reg-step-1">
+      <div class="field-row field-row-2">
+        <div class="field-group">
+          <label class="field-label">Nombre del Proveedor *</label>
+          <input type="text" class="field-input" id="reg-nombre" placeholder="Ej: Distribuidora ABC">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Persona de Contacto</label>
+          <input type="text" class="field-input" id="reg-contacto" placeholder="Nombre del vendedor">
+        </div>
+      </div>
+      <div class="field-row field-row-3">
+        <div class="field-group">
+          <label class="field-label">Teléfono</label>
+          <input type="tel" class="field-input" id="reg-telefono" placeholder="55 0000 0000">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Email</label>
+          <input type="email" class="field-input" id="reg-email" placeholder="contacto@empresa.com">
+        </div>
+        <div class="field-group">
+          <label class="field-label">WhatsApp</label>
+          <input type="tel" class="field-input" id="reg-whatsapp" placeholder="55 0000 0000">
+        </div>
+      </div>
+      <div class="field-row field-row-2">
+        <div class="field-group">
+          <label class="field-label">Sucursal(es) que puede abastecer *</label>
+          <select class="field-select" id="reg-sucursal">
+            <option value="">Seleccionar...</option>
+            <option value="Centro">Centro</option>
+            <option value="Cibeles">Cibeles</option>
+            <option value="Ambas">Ambas sucursales</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Estado / Zona Metropolitana *</label>
+          <select class="field-select" id="reg-zona">
+            <option value="">Seleccionar...</option>
+            <option value="local">Local (mismo estado)</option>
+            <option value="metro">Zona Metropolitana</option>
+            <option value="nacional">Nacional</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Notas adicionales</label>
+        <textarea class="field-textarea" id="reg-notas" placeholder="Observaciones relevantes del proveedor..."></textarea>
+      </div>
+    </div>
+
+    <!-- STEP 2: CRITERIOS DE CALIDAD -->
+    <div id="reg-step-2" style="display:none">
+      <p style="font-size:13px; color:var(--ink-muted); margin-bottom:20px;">Cada criterio suma puntos para calcular el <strong>nivel de riesgo</strong> de cambiar a este proveedor.</p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px;">
+        <div class="card" style="padding:16px;">
+          <label class="field-label">¿Emite factura?</label>
+          <select class="field-select" id="crit-factura" onchange="calcRisk()">
+            <option value="">Seleccionar...</option>
+            <option value="si">✅ Sí</option>
+            <option value="no">❌ No</option>
+            <option value="pendiente">⏳ Pendiente</option>
+          </select>
+        </div>
+        <div class="card" style="padding:16px;">
+          <label class="field-label">¿Tiene ruta a las sucursales?</label>
+          <select class="field-select" id="crit-ruta" onchange="calcRisk()">
+            <option value="">Seleccionar...</option>
+            <option value="si">✅ Sí</option>
+            <option value="no">❌ No</option>
+          </select>
+        </div>
+        <div class="card" style="padding:16px;">
+          <label class="field-label">¿Entrega a puerta en cada sucursal?</label>
+          <select class="field-select" id="crit-entrega" onchange="calcRisk()">
+            <option value="">Seleccionar...</option>
+            <option value="si">✅ Sí</option>
+            <option value="no">❌ No</option>
+          </select>
+        </div>
+        <div class="card" style="padding:16px;">
+          <label class="field-label">¿Maneja logística inversa?</label>
+          <select class="field-select" id="crit-logistica" onchange="calcRisk()">
+            <option value="">Seleccionar...</option>
+            <option value="si">✅ Sí</option>
+            <option value="no">❌ No</option>
+            <option value="na">➖ N/A</option>
+          </select>
+        </div>
+        <div class="card" style="padding:16px;">
+          <label class="field-label">¿La marca es del propio insumo?</label>
+          <select class="field-select" id="crit-marca" onchange="calcRisk()">
+            <option value="">Seleccionar...</option>
+            <option value="si">✅ Sí (fabricante)</option>
+            <option value="no">❌ No (distribuidor)</option>
+          </select>
+        </div>
+        <div class="card" style="padding:16px;">
+          <label class="field-label">¿Trabaja con otros negocios de la zona?</label>
+          <select class="field-select" id="crit-referencias" onchange="calcRisk()">
+            <option value="">Seleccionar...</option>
+            <option value="si">✅ Sí</option>
+            <option value="no">❌ No</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row field-row-2" style="margin-bottom:24px;">
+        <div class="field-group">
+          <label class="field-label">Lead Time (días de entrega)</label>
+          <input type="number" class="field-input" id="crit-leadtime" min="0" max="30" placeholder="Ej: 2" oninput="calcRisk()">
+        </div>
+        <div class="field-group" style="display:flex; flex-direction:column; justify-content:flex-end;">
+          <label class="field-label">Lead time aceptable si es ≤ 3 días</label>
+          <div style="font-size:12px; color:var(--ink-muted); padding:10px 0;">
+            Valores mayores a 3 días se consideran riesgo operativo
+          </div>
+        </div>
+      </div>
+
+      <!-- RISK DISPLAY -->
+      <div class="card" style="padding:20px; background:var(--surface); border-style:dashed;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div>
+            <div class="section-title" style="font-size:15px;">Nivel de Riesgo Calculado</div>
+            <div style="font-size:12px; color:var(--ink-muted);">Basado en criterios de calidad registrados</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-family:'DM Serif Display',serif; font-size:32px; color:var(--ink);" id="risk-pct">—%</div>
+            <div class="badge badge-gray" id="risk-label">Sin calcular</div>
+          </div>
+        </div>
+        <div class="risk-bar">
+          <div class="risk-fill" id="risk-bar-fill" style="width:0%"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--ink-muted); margin-top:4px;">
+          <span>0% — Bajo riesgo</span>
+          <span>100% — Alto riesgo</span>
+        </div>
+        <div class="divider" style="margin:16px 0 12px;"></div>
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+          <span style="font-size:12px; color:var(--ink-muted); font-weight:600;">¿Ajustar manualmente?</span>
+          <input type="range" id="risk-manual" min="0" max="100" step="5" value="0"
+                 oninput="setManualRisk(this.value)"
+                 style="flex:1; min-width:100px; accent-color:var(--gold);">
+          <span style="font-size:13px; font-weight:700; min-width:36px;" id="risk-manual-val">0%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3: INSUMOS Y PRECIOS -->
+    <div id="reg-step-3" style="display:none">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+        <div>
+          <div class="section-title">Insumos que ofrece este proveedor</div>
+          <div class="section-subtitle">Selecciona del catálogo y registra precios y variables de cambio</div>
+        </div>
+        <button class="btn btn-outline" onclick="addInsumoRow()">
+          ➕ Agregar Insumo
+        </button>
+      </div>
+
+      <div style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:160px;">
+          <label class="field-label">Sucursal del catálogo</label>
+          <select class="field-select" id="insumo-sucursal-cat" onchange="loadCatalog()">
+            <option value="Cibeles">Cibeles</option>
+            <option value="Centro">Centro</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="insumos-list">
+        <!-- Insumo rows will be added here -->
+      </div>
+
+      <!-- PDF UPLOAD per insumo is handled inside each row -->
+
+      <!-- COSTO DE RIESGOS DE CAMBIO SUMMARY -->
+      <div class="card" style="margin-top:20px; background:var(--surface);">
+        <div class="section-title" style="margin-bottom:4px;">🕐 Costo de Riesgos de Cambio</div>
+        <div class="section-subtitle">Suma de las variables de transición por insumo</div>
+        <div class="stats-grid stats-grid-4" style="margin-top:16px;">
+          <div class="stat-card">
+            <div class="stat-label">Pruebas de Calidad</div>
+            <div class="stat-value" id="sum-pruebas">$0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Ajustes Operativos</div>
+            <div class="stat-value" id="sum-ajustes">$0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Capacitación</div>
+            <div class="stat-value" id="sum-cap">$0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Mermas Iniciales</div>
+            <div class="stat-value" id="sum-mermas">$0</div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-weight:700; font-size:15px;">Total Costo de Riesgo de Cambio:</span>
+          <span style="font-family:'DM Serif Display',serif; font-size:24px;" id="sum-total-riesgo">$0</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" id="reg-btn-back" onclick="regStep('back')" style="display:none">← Atrás</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-register')">Cancelar</button>
+      <button class="btn btn-gold" id="reg-btn-next" onclick="regStep('next')">Continuar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL: PROVIDER DETAIL / COMPARISON
+═══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title" id="detail-title">Análisis de Proveedor</h2>
+        <p class="modal-subtitle" id="detail-subtitle"></p>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-detail')">×</button>
+    </div>
+    <div id="detail-content"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0xXsazhzeTgH9JzjgD9fRfAme6mpY5lt601PUN8pSwG00ELGIGgnphsf5nIXbrCFmVw/exec'; // Se reemplaza al publicar Apps Script
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let currentUser = null;
+let currentStep = 1;
+let catalogoCibeles = [];
+let catalogoCentro = [];
+let radarProviders = [];
+let insumoRows = [];
+let calculatedRisk = 0;
+let manualRiskOverride = false;
+let historicoPrices = {}; // {idinsumo: {sucursal: {precio_unitario, fecha, unidad}}}
+
+// ═══════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════
+async function doLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value.trim();
+  const btn = document.getElementById('btn-login');
+  const err = document.getElementById('login-error');
+
+  if (!user || !pass) {
+    err.textContent = 'Por favor ingresa usuario y contraseña';
+    err.classList.add('show');
+    return;
+  }
+
+  btn.classList.add('loading');
+  btn.disabled = true;
+  err.classList.remove('show');
+
+  try {
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=login&user=${encodeURIComponent(user)}&pass=${encodeURIComponent(pass)}`);
+    const data = await res.json();
+
+    if (data.success) {
+      currentUser = data.user;
+      document.getElementById('nav-username').textContent = currentUser.nombre;
+      document.getElementById('welcome-name').textContent = currentUser.nombre;
+      document.getElementById('login-screen').classList.remove('active');
+      document.getElementById('app-screen').classList.add('active');
+      showModule('home');
+    } else {
+      err.textContent = data.message || 'Usuario o contraseña incorrectos';
+      err.classList.add('show');
+    }
+  } catch(e) {
+    err.textContent = 'Error de conexión. Verifica tu acceso a internet.';
+    err.classList.add('show');
+  }
+
+  btn.classList.remove('loading');
+  btn.disabled = false;
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('login-screen').classList.contains('active')) {
+    doLogin();
+  }
+});
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('app-screen').classList.remove('active');
+  document.getElementById('login-screen').classList.add('active');
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  showToast('Sesión cerrada correctamente', 'success');
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+function showModule(name) {
+  document.querySelectorAll('.module').forEach(m => m.classList.remove('active'));
+  document.getElementById(`module-${name}`).classList.add('active');
+  window.scrollTo(0, 0);
+  if (name === 'radar') {
+    document.getElementById('radar-list-view').style.display = 'none';
+    document.getElementById('radar-detail-view').style.display = 'none';
+  }
+}
+
+function showRadarList() {
+  document.getElementById('radar-list-view').style.display = 'block';
+  document.getElementById('radar-detail-view').style.display = 'none';
+  loadRadarProviders();
+}
+
+// ═══════════════════════════════════════════
+// MODAL HELPERS
+// ═══════════════════════════════════════════
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function openRegisterModal(providerData = null) {
+  currentStep = 1;
+  manualRiskOverride = false;
+  insumoRows = [];
+  document.getElementById('insumos-list').innerHTML = '';
+  resetRegisterForm();
+  if (providerData) fillRegisterForm(providerData);
+  updateStepUI();
+  openModal('modal-register');
+}
+
+// ═══════════════════════════════════════════
+// REGISTER FORM - STEPS
+// ═══════════════════════════════════════════
+function regStep(dir) {
+  if (dir === 'next') {
+    if (!validateStep(currentStep)) return;
+    if (currentStep < 3) {
+      currentStep++;
+      if (currentStep === 3) loadCatalog();
+    } else {
+      saveProvider();
+      return;
+    }
+  } else {
+    if (currentStep > 1) currentStep--;
+  }
+  updateStepUI();
+}
+
+function updateStepUI() {
+  [1, 2, 3].forEach(i => {
+    document.getElementById(`reg-step-${i}`).style.display = i === currentStep ? 'block' : 'none';
+    const dot = document.getElementById(`step-${i}-dot`);
+    dot.classList.toggle('active', i === currentStep);
+    dot.classList.toggle('done', i < currentStep);
+  });
+  document.getElementById('reg-btn-back').style.display = currentStep > 1 ? 'inline-flex' : 'none';
+  const nextBtn = document.getElementById('reg-btn-next');
+  nextBtn.textContent = currentStep === 3 ? '💾 Guardar Proveedor' : 'Continuar →';
+}
+
+function validateStep(step) {
+  if (step === 1) {
+    const nombre = document.getElementById('reg-nombre').value.trim();
+    const sucursal = document.getElementById('reg-sucursal').value;
+    const zona = document.getElementById('reg-zona').value;
+    if (!nombre) { showToast('El nombre del proveedor es requerido', 'error'); return false; }
+    if (!sucursal) { showToast('Selecciona la sucursal que puede abastecer', 'error'); return false; }
+    if (!zona) { showToast('Selecciona la zona del proveedor', 'error'); return false; }
+  }
+  if (step === 3 && insumoRows.length === 0) {
+    showToast('Agrega al menos un insumo', 'error');
+    return false;
+  }
+  return true;
+}
+
+function resetRegisterForm() {
+  ['reg-nombre','reg-contacto','reg-telefono','reg-email','reg-whatsapp','reg-notas'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  ['reg-sucursal','reg-zona','crit-factura','crit-ruta','crit-entrega','crit-logistica','crit-marca','crit-referencias'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const lt = document.getElementById('crit-leadtime');
+  if (lt) lt.value = '';
+  document.getElementById('risk-pct').textContent = '—%';
+  document.getElementById('risk-label').className = 'badge badge-gray';
+  document.getElementById('risk-label').textContent = 'Sin calcular';
+  document.getElementById('risk-bar-fill').style.width = '0%';
+  document.getElementById('risk-manual').value = 0;
+  document.getElementById('risk-manual-val').textContent = '0%';
+  calculatedRisk = 0;
+}
+
+// ═══════════════════════════════════════════
+// RISK CALCULATOR
+// ═══════════════════════════════════════════
+function calcRisk() {
+  if (manualRiskOverride) return;
+  let score = 0;
+  let total = 0;
+
+  const checks = {
+    'crit-factura': { si: 20, no: 0, pendiente: 8 },
+    'crit-ruta': { si: 15, no: 0 },
+    'crit-entrega': { si: 15, no: 0 },
+    'crit-logistica': { si: 10, no: 0, na: 5 },
+    'crit-marca': { si: 10, no: 5 },
+    'crit-referencias': { si: 10, no: 0 },
+  };
+
+  Object.entries(checks).forEach(([id, vals]) => {
+    const val = document.getElementById(id)?.value;
+    total += 20;
+    if (val && vals[val] !== undefined) score += vals[val];
+  });
+
+  // Lead time
+  const lt = parseInt(document.getElementById('crit-leadtime')?.value) || 0;
+  total += 20;
+  if (lt > 0 && lt <= 3) score += 20;
+  else if (lt > 3 && lt <= 7) score += 10;
+  // >7 or 0: 0 points
+
+  const pctGood = total > 0 ? (score / total) * 100 : 0;
+  calculatedRisk = Math.round(100 - pctGood);
+
+  updateRiskDisplay(calculatedRisk);
+  document.getElementById('risk-manual').value = calculatedRisk;
+  document.getElementById('risk-manual-val').textContent = calculatedRisk + '%';
+}
+
+function setManualRisk(val) {
+  manualRiskOverride = true;
+  calculatedRisk = parseInt(val);
+  document.getElementById('risk-manual-val').textContent = val + '%';
+  updateRiskDisplay(calculatedRisk);
+}
+
+function updateRiskDisplay(pct) {
+  document.getElementById('risk-pct').textContent = pct + '%';
+  document.getElementById('risk-bar-fill').style.width = pct + '%';
+  const label = document.getElementById('risk-label');
+  if (pct <= 30) {
+    label.className = 'badge badge-green';
+    label.textContent = '✅ Riesgo Bajo';
+  } else if (pct <= 60) {
+    label.className = 'badge badge-amber';
+    label.textContent = '⚠️ Riesgo Medio';
+  } else {
+    label.className = 'badge badge-red';
+    label.textContent = '🔴 Riesgo Alto';
+  }
+}
+
+// ═══════════════════════════════════════════
+// CATALOG & INSUMO ROWS
+// ═══════════════════════════════════════════
+async function loadCatalog() {
+  const sucursal = document.getElementById('insumo-sucursal-cat').value;
+  const sheetName = `Rendimientos_${sucursal}`;
+
+  try {
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=getCatalog&sheet=${sheetName}`);
+    const data = await res.json();
+    if (sucursal === 'Cibeles') catalogoCibeles = data.items || [];
+    else catalogoCentro = data.items || [];
+  } catch(e) {
+    // fallback: use empty array
+  }
+
+  // Refresh existing selects
+  insumoRows.forEach(rowId => refreshInsumoSelect(rowId));
+}
+
+function getCatalog() {
+  const sucursal = document.getElementById('insumo-sucursal-cat')?.value || 'Cibeles';
+  return sucursal === 'Cibeles' ? catalogoCibeles : catalogoCentro;
+}
+
+let rowCounter = 0;
+function addInsumoRow() {
+  const id = `row-${++rowCounter}`;
+  insumoRows.push(id);
+
+  const catalog = getCatalog();
+  const options = catalog.map(c =>
+    `<option value="${c.clave}" data-unidad="${c.unidad}" data-rend="${c.rendimiento}">${c.descripcion}</option>`
+  ).join('');
+
+  const html = `
+  <div class="insumo-item" id="${id}">
+    <div class="insumo-item-header">
+      <div style="flex:1;">
+        <label class="field-label">Insumo del catálogo</label>
+        <select class="field-select" id="${id}-insumo" onchange="onInsumoSelect('${id}')">
+          <option value="">Seleccionar insumo...</option>
+          ${options}
+        </select>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="removeInsumoRow('${id}')" style="margin-left:12px; color:var(--red);">✕</button>
+    </div>
+
+    <div id="${id}-meta" style="display:none;">
+      <div style="background:var(--blue-pale); border-radius:8px; padding:10px 14px; font-size:12px; color:var(--blue); margin-bottom:12px; display:flex; gap:16px;">
+        <span>📦 Presentación: <strong id="${id}-pres">—</strong></span>
+        <span>⚖️ Rendimiento: <strong id="${id}-rend">—</strong></span>
+        <span>📏 Unidad: <strong id="${id}-unit">—</strong></span>
+        <span>💰 Último precio actual: <strong id="${id}-precio-actual">—</strong></span>
+      </div>
+
+      <div class="field-row field-row-3" style="margin-bottom:12px;">
+        <div class="field-group">
+          <label class="field-label">Precio del proveedor nuevo *</label>
+          <input type="number" class="field-input" id="${id}-precio" step="0.01" placeholder="0.00" oninput="calcInsumoSaving('${id}')">
+        </div>
+        <div class="field-group">
+          <label class="field-label">¿Incluye IVA?</label>
+          <select class="field-select" id="${id}-iva" onchange="calcInsumoSaving('${id}')">
+            <option value="si">Sí incluye IVA</option>
+            <option value="no">No incluye IVA</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Precio por unidad base (con IVA)</label>
+          <div style="background:var(--surface); border:1.5px solid var(--surface-3); border-radius:8px; padding:10px 14px; font-size:14px; font-weight:700; color:var(--ink);" id="${id}-precio-base">—</div>
+        </div>
+      </div>
+
+      <!-- SAVING PREVIEW -->
+      <div id="${id}-saving-preview" style="display:none; background:var(--green-pale); border-radius:8px; padding:12px 16px; margin-bottom:12px; font-size:13px;">
+        <div style="display:flex; gap:24px; flex-wrap:wrap;">
+          <span>💚 Ahorro por unidad: <strong id="${id}-ahorro-unit">—</strong></span>
+          <span>📅 Ahorro mensual est.: <strong id="${id}-ahorro-mes">—</strong></span>
+        </div>
+      </div>
+
+      <!-- PDF UPLOAD -->
+      <div class="field-group">
+        <label class="field-label">📄 Cotización PDF (opcional)</label>
+        <input type="file" accept=".pdf" class="field-input" id="${id}-pdf" style="padding:8px;">
+      </div>
+
+      <!-- TIMING VARIABLES -->
+      <div style="border-top:1px dashed var(--surface-3); margin-top:4px; padding-top:16px;">
+        <div style="font-size:12px; font-weight:700; color:var(--ink-muted); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:12px;">⏱ Variables de Transición (Timing Óptimo)</div>
+        <div class="field-row field-row-2" style="margin-bottom:0;">
+          <div class="field-group">
+            <label class="field-label">Pruebas de calidad ($)</label>
+            <input type="number" class="field-input" id="${id}-pruebas" min="0" step="100" placeholder="0.00" oninput="updateRiskCosts()">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Ajustes operativos ($)</label>
+            <input type="number" class="field-input" id="${id}-ajustes" min="0" step="100" placeholder="0.00" oninput="updateRiskCosts()">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Capacitación ($)</label>
+            <input type="number" class="field-input" id="${id}-cap" min="0" step="100" placeholder="0.00" oninput="updateRiskCosts()">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Posibles mermas iniciales ($)</label>
+            <input type="number" class="field-input" id="${id}-mermas" min="0" step="100" placeholder="0.00" oninput="updateRiskCosts()">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('insumos-list').insertAdjacentHTML('beforeend', html);
+}
+
+function removeInsumoRow(id) {
+  document.getElementById(id)?.remove();
+  insumoRows = insumoRows.filter(r => r !== id);
+  updateRiskCosts();
+}
+
+async function onInsumoSelect(rowId) {
+  const sel = document.getElementById(`${rowId}-insumo`);
+  const opt = sel.options[sel.selectedIndex];
+  const clave = sel.value;
+  if (!clave) return;
+
+  const unidad = opt.dataset.unidad || '—';
+  const rend = opt.dataset.rend || '1';
+  const desc = opt.text;
+  const sucursal = document.getElementById('insumo-sucursal-cat').value;
+
+  document.getElementById(`${rowId}-meta`).style.display = 'block';
+  document.getElementById(`${rowId}-pres`).textContent = desc;
+  document.getElementById(`${rowId}-rend`).textContent = rend;
+  document.getElementById(`${rowId}-unit`).textContent = unidad;
+  document.getElementById(`${rowId}-precio-actual`).textContent = '...';
+
+  // Fetch last price from history
+  try {
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=getLastPrice&idinsumo=${clave}&sucursal=${sucursal}`);
+    const data = await res.json();
+    if (data.precio) {
+      document.getElementById(`${rowId}-precio-actual`).textContent =
+        `$${formatNum(data.precio)}/${unidad} (${data.fecha})`;
+      // Store for comparison
+      historicoPrices[`${rowId}`] = { precio: data.precio, unidad, rendimiento: parseFloat(rend) };
+    } else {
+      document.getElementById(`${rowId}-precio-actual`).textContent = 'Sin historial';
+    }
+  } catch {
+    document.getElementById(`${rowId}-precio-actual`).textContent = 'Sin historial';
+  }
+}
+
+function refreshInsumoSelect(rowId) {
+  const sel = document.getElementById(`${rowId}-insumo`);
+  if (!sel) return;
+  const current = sel.value;
+  const catalog = getCatalog();
+  sel.innerHTML = `<option value="">Seleccionar insumo...</option>` +
+    catalog.map(c => `<option value="${c.clave}" data-unidad="${c.unidad}" data-rend="${c.rendimiento}">${c.descripcion}</option>`).join('');
+  if (current) sel.value = current;
+}
+
+function calcInsumoSaving(rowId) {
+  const precioInput = parseFloat(document.getElementById(`${rowId}-precio`)?.value) || 0;
+  const ivaIncluye = document.getElementById(`${rowId}-iva`)?.value;
+  const rend = historicoPrices[rowId]?.rendimiento || 1;
+  const precioActual = historicoPrices[rowId]?.precio;
+  const unidad = historicoPrices[rowId]?.unidad || '';
+
+  if (!precioInput) return;
+
+  // Normalize to price per base unit with IVA
+  let precioConIva = ivaIncluye === 'si' ? precioInput : precioInput * 1.16;
+  let precioBaseNuevo = precioConIva / rend;
+
+  document.getElementById(`${rowId}-precio-base`).textContent =
+    `$${formatNum(precioBaseNuevo)}/${unidad}`;
+
+  if (precioActual) {
+    const ahorroUnit = precioActual - precioBaseNuevo;
+    const preview = document.getElementById(`${rowId}-saving-preview`);
+    preview.style.display = ahorroUnit > 0 ? 'block' : 'none';
+    if (ahorroUnit > 0) {
+      document.getElementById(`${rowId}-ahorro-unit`).textContent =
+        `$${formatNum(ahorroUnit)}/${unidad}`;
+      // Monthly saving will be calculated in detail view from history volume
+      document.getElementById(`${rowId}-ahorro-mes`).textContent = 'Ver en análisis completo';
+    }
+  }
+}
+
+function updateRiskCosts() {
+  let pruebas = 0, ajustes = 0, cap = 0, mermas = 0;
+  insumoRows.forEach(id => {
+    pruebas += parseFloat(document.getElementById(`${id}-pruebas`)?.value || 0);
+    ajustes += parseFloat(document.getElementById(`${id}-ajustes`)?.value || 0);
+    cap += parseFloat(document.getElementById(`${id}-cap`)?.value || 0);
+    mermas += parseFloat(document.getElementById(`${id}-mermas`)?.value || 0);
+  });
+  const total = pruebas + ajustes + cap + mermas;
+  document.getElementById('sum-pruebas').textContent = '$' + formatNum(pruebas);
+  document.getElementById('sum-ajustes').textContent = '$' + formatNum(ajustes);
+  document.getElementById('sum-cap').textContent = '$' + formatNum(cap);
+  document.getElementById('sum-mermas').textContent = '$' + formatNum(mermas);
+  document.getElementById('sum-total-riesgo').textContent = '$' + formatNum(total);
+}
+
+// ═══════════════════════════════════════════
+// SAVE PROVIDER
+// ═══════════════════════════════════════════
+async function saveProvider() {
+  const insumos = insumoRows.map(rowId => {
+    const clave = document.getElementById(`${rowId}-insumo`)?.value;
+    const desc = document.getElementById(`${rowId}-insumo`)?.options[document.getElementById(`${rowId}-insumo`)?.selectedIndex]?.text;
+    const precio = parseFloat(document.getElementById(`${rowId}-precio`)?.value || 0);
+    const iva = document.getElementById(`${rowId}-iva`)?.value;
+    const unidad = historicoPrices[rowId]?.unidad || '';
+    const rend = historicoPrices[rowId]?.rendimiento || 1;
+    const precioConIva = iva === 'si' ? precio : precio * 1.16;
+    const precioBase = precioConIva / rend;
+    return {
+      clave, desc, precio, iva, unidad, rendimiento: rend, precioBase,
+      pruebas: parseFloat(document.getElementById(`${rowId}-pruebas`)?.value || 0),
+      ajustes: parseFloat(document.getElementById(`${rowId}-ajustes`)?.value || 0),
+      cap: parseFloat(document.getElementById(`${rowId}-cap`)?.value || 0),
+      mermas: parseFloat(document.getElementById(`${rowId}-mermas`)?.value || 0),
+      sucursal: document.getElementById('insumo-sucursal-cat')?.value
+    };
+  });
+
+  const payload = {
+    action: 'saveProvider',
+    nombre: document.getElementById('reg-nombre').value,
+    contacto: document.getElementById('reg-contacto').value,
+    telefono: document.getElementById('reg-telefono').value,
+    email: document.getElementById('reg-email').value,
+    whatsapp: document.getElementById('reg-whatsapp').value,
+    sucursal: document.getElementById('reg-sucursal').value,
+    zona: document.getElementById('reg-zona').value,
+    notas: document.getElementById('reg-notas').value,
+    factura: document.getElementById('crit-factura').value,
+    ruta: document.getElementById('crit-ruta').value,
+    entrega: document.getElementById('crit-entrega').value,
+    logistica: document.getElementById('crit-logistica').value,
+    marca: document.getElementById('crit-marca').value,
+    referencias: document.getElementById('crit-referencias').value,
+    leadtime: document.getElementById('crit-leadtime').value,
+    riesgo: calculatedRisk,
+    estado: 'radar',
+    insumos: JSON.stringify(insumos),
+    fechaRegistro: new Date().toISOString(),
+    registradoPor: currentUser?.nombre || ''
+  };
+
+  const btn = document.getElementById('reg-btn-next');
+  btn.textContent = '⏳ Guardando...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      closeModal('modal-register');
+      showToast('✅ Proveedor registrado exitosamente', 'success');
+      showRadarList();
+      // Navigate to detail view of new provider
+      setTimeout(() => openProviderDetail(data.id), 800);
+    } else {
+      showToast('Error al guardar: ' + (data.message || 'Intenta de nuevo'), 'error');
+    }
+  } catch(e) {
+    showToast('Error de conexión al guardar', 'error');
+  }
+
+  btn.textContent = '💾 Guardar Proveedor';
+  btn.disabled = false;
+}
+
+// ═══════════════════════════════════════════
+// LOAD RADAR PROVIDERS
+// ═══════════════════════════════════════════
+async function loadRadarProviders() {
+  document.getElementById('radar-cards-container').innerHTML =
+    '<div class="loading-state"><div class="loader"></div><span>Cargando proveedores...</span></div>';
+
+  try {
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=getProviders`);
+    const data = await res.json();
+    radarProviders = data.providers || [];
+    renderRadarCards(radarProviders);
+  } catch(e) {
+    document.getElementById('radar-cards-container').innerHTML =
+      '<div class="empty-state"><div class="empty-icon">⚠️</div><h3 class="empty-title">Error de conexión</h3><p class="empty-desc">No se pudieron cargar los proveedores. Verifica la configuración.</p></div>';
+  }
+}
+
+function renderRadarCards(providers) {
+  if (providers.length === 0) {
+    document.getElementById('radar-cards-container').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🎯</div>
+        <h3 class="empty-title">Sin proveedores registrados</h3>
+        <p class="empty-desc">Registra tu primer proveedor para comenzar a simular ahorros.</p>
+        <button class="btn btn-gold" onclick="openRegisterModal()">➕ Registrar Primer Proveedor</button>
+      </div>`;
+    return;
+  }
+
+  const html = `
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px,1fr)); gap:16px;">
+      ${providers.map(p => `
+        <div class="card" style="cursor:pointer; transition:var(--transition);"
+             onmouseenter="this.style.boxShadow='var(--shadow-lg)'"
+             onmouseleave="this.style.boxShadow=''"
+             onclick="openProviderDetail('${p.id}')">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+            <div>
+              <div style="font-family:'DM Serif Display',serif; font-size:17px; color:var(--ink); margin-bottom:4px;">${p.nombre}</div>
+              <div style="font-size:12px; color:var(--ink-muted);">📦 ${(p.insumos_count || 0)} insumos · 📍 ${p.sucursal || '—'}</div>
+            </div>
+            <div style="text-align:right;">
+              <span class="badge ${p.estado === 'activo' ? 'badge-green' : 'badge-gold'}">${p.estado === 'activo' ? '✅ Activo' : '🎯 En Radar'}</span>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center; justify-content:space-between;">
+            <div>
+              <div style="font-size:11px; color:var(--ink-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">Riesgo de cambio</div>
+              <div style="font-size:20px; font-weight:700; color:${getRiskColor(p.riesgo)};">${p.riesgo || 0}%</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:11px; color:var(--ink-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">Registrado</div>
+              <div style="font-size:13px; color:var(--ink-light);">${formatDate(p.fechaRegistro)}</div>
+            </div>
+          </div>
+          <div class="risk-bar" style="margin-top:8px;">
+            <div class="risk-fill" style="width:${p.riesgo || 0}%"></div>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+
+  document.getElementById('radar-cards-container').innerHTML = html;
+}
+
+function filterRadarList() {
+  const q = document.getElementById('radar-search')?.value.toLowerCase() || '';
+  const status = document.getElementById('radar-filter-status')?.value || '';
+  const filtered = radarProviders.filter(p => {
+    const matchQ = !q || p.nombre.toLowerCase().includes(q);
+    const matchS = !status || p.estado === status;
+    return matchQ && matchS;
+  });
+  renderRadarCards(filtered);
+}
+
+// ═══════════════════════════════════════════
+// PROVIDER DETAIL VIEW
+// ═══════════════════════════════════════════
+async function openProviderDetail(providerId) {
+  closeModal('modal-detail');
+  document.getElementById('radar-list-view').style.display = 'none';
+  const detailView = document.getElementById('radar-detail-view');
+  detailView.style.display = 'block';
+  detailView.innerHTML = '<div class="loading-state"><div class="loader"></div><span>Cargando análisis completo...</span></div>';
+
+  try {
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=getProviderDetail&id=${providerId}`);
+    const data = await res.json();
+    renderProviderDetail(data);
+  } catch(e) {
+    detailView.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><h3 class="empty-title">Error al cargar el análisis</h3></div>';
+  }
+}
+
+function renderProviderDetail(p) {
+  const insumos = p.insumos || [];
+  const totalAhorroMensual = insumos.reduce((acc, i) => acc + (i.ahorroMensual || 0), 0);
+  const totalAhorroAcum = insumos.reduce((acc, i) => acc + (i.ahorroAcumulado || 0), 0);
+  const totalCostoRiesgo = insumos.reduce((acc, i) =>
+    acc + (i.pruebas || 0) + (i.ajustes || 0) + (i.cap || 0) + (i.mermas || 0), 0);
+  const ahorroAjustado = totalAhorroMensual * (1 - (p.riesgo || 0) / 100);
+
+  // Timing calculation
+  const timingRatio = totalAhorroMensual > 0 ? totalCostoRiesgo / totalAhorroMensual : 999;
+  let timingCriterio, timingClass, timingIcon;
+  if (timingRatio <= 1) { timingCriterio = 'Cambio Inmediato'; timingClass = 'inmediato'; timingIcon = '🚀'; }
+  else if (timingRatio <= 3) { timingCriterio = 'Negociar Mejor Precio'; timingClass = 'negociar'; timingIcon = '🤝'; }
+  else { timingCriterio = 'Buscar Otro Proveedor'; timingClass = 'buscar'; timingIcon = '🔍'; }
+
+  const html = `
+    <!-- HEADER -->
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+      <div>
+        <div class="breadcrumb">
+          <a onclick="showModule('home')">🏠 Inicio</a>
+          <span>›</span>
+          <a onclick="showRadarList()">Proveedores en Radar</a>
+          <span>›</span>
+          <span>${p.nombre}</span>
+        </div>
+        <h2 style="font-family:'DM Serif Display',serif; font-size:26px; margin-top:4px;">${p.nombre}</h2>
+        <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+          <span class="badge ${p.estado === 'activo' ? 'badge-green' : 'badge-gold'}">${p.estado === 'activo' ? '✅ Activo' : '🎯 En Radar'}</span>
+          <span class="badge badge-gray">📍 ${p.sucursal || '—'}</span>
+          <span class="badge badge-gray">📅 Registrado ${formatDate(p.fechaRegistro)}</span>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn btn-outline btn-sm" onclick="openRegisterModal(${JSON.stringify(p).replace(/"/g, '&quot;')})">✏️ Editar</button>
+        ${p.estado !== 'activo' ? `
+        <button class="btn btn-green btn-sm" onclick="activateProvider('${p.id}')">⚡ Marcar como Activo</button>
+        ` : `
+        <div style="display:flex; gap:8px; align-items:center; font-size:13px; color:var(--ink-muted);">
+          ID Sistema: <input type="text" class="field-input" value="${p.idSistema || ''}" placeholder="ID del sistema" style="width:140px; font-size:13px; padding:6px 10px;" onchange="updateSystemId('${p.id}', this.value)">
+        </div>`}
+      </div>
+    </div>
+
+    <!-- KPI CARDS -->
+    <div class="stats-grid stats-grid-4" style="margin-bottom:24px;">
+      <div class="stat-card accent-green">
+        <div class="stat-label">Ahorro Mensual Proyectado</div>
+        <div class="stat-value" style="font-size:24px;">$${formatNum(totalAhorroMensual)}</div>
+        <div class="stat-sub">Promedio móvil 3 meses</div>
+      </div>
+      <div class="stat-card accent-gold">
+        <div class="stat-label">Ahorro Ajustado por Riesgo (${p.riesgo}%)</div>
+        <div class="stat-value" style="font-size:24px;">$${formatNum(ahorroAjustado)}</div>
+        <div class="stat-sub">Después de ajuste de riesgo</div>
+      </div>
+      <div class="stat-card accent-red">
+        <div class="stat-label">Costo de Riesgo de Cambio</div>
+        <div class="stat-value" style="font-size:24px;">$${formatNum(totalCostoRiesgo)}</div>
+        <div class="stat-sub">Inversión única de transición</div>
+      </div>
+      <div class="stat-card accent-blue">
+        <div class="stat-label">Timing Óptimo</div>
+        <div class="stat-value" style="font-size:18px; margin-top:4px;">
+          <span class="timing-chip ${timingClass}">${timingIcon} ${timingCriterio}</span>
+        </div>
+        <div class="stat-sub">Ratio: ${totalAhorroMensual > 0 ? timingRatio.toFixed(1) : '—'}x</div>
+      </div>
+    </div>
+
+    <!-- SUCURSAL TOGGLE -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+      <div class="section-title">Análisis por Insumo</div>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <div class="toggle-group" id="view-toggle">
+          <button class="toggle-btn active" onclick="setDetailView('consolidado', this)">📊 Consolidado</button>
+          <button class="toggle-btn" onclick="setDetailView('comparativo', this)">⚖️ Centro vs Cibeles</button>
+        </div>
+        <div class="sucursal-selector" id="sucursal-filter" style="display:none;">
+          <button class="sucursal-pill active" onclick="filterBySucursal('Ambas', this)">Ambas</button>
+          <button class="sucursal-pill" onclick="filterBySucursal('Centro', this)">Centro</button>
+          <button class="sucursal-pill" onclick="filterBySucursal('Cibeles', this)">Cibeles</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INSUMOS TABLE -->
+    <div class="card" style="padding:0; overflow:hidden; margin-bottom:24px;">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Insumo</th>
+            <th>Unidad</th>
+            <th>Vol. Mensual</th>
+            <th>Precio Actual</th>
+            <th>Precio Nuevo</th>
+            <th class="highlight">Ahorro/Unidad</th>
+            <th class="highlight">Ahorro Mensual</th>
+            <th class="highlight">Ahorro Acum.</th>
+            <th>Timing</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${insumos.map(i => {
+            const ahorroUnit = (i.precioActual || 0) - (i.precioBase || 0);
+            const itimingRatio = i.ahorroMensual > 0 ?
+              ((i.pruebas||0)+(i.ajustes||0)+(i.cap||0)+(i.mermas||0)) / i.ahorroMensual : 999;
+            let itClass, itLabel;
+            if (itimingRatio <= 1) { itClass='inmediato'; itLabel='🚀 Inmediato'; }
+            else if (itimingRatio <= 3) { itClass='negociar'; itLabel='🤝 Negociar'; }
+            else { itClass='buscar'; itLabel='🔍 Buscar otro'; }
+            return `
+            <tr>
+              <td class="td-name">${i.desc || '—'}</td>
+              <td>${i.unidad || '—'}</td>
+              <td class="td-amount">${formatNum(i.volMensual || 0)} ${i.unidad || ''}</td>
+              <td class="td-amount">$${formatNum(i.precioActual || 0)}</td>
+              <td class="td-amount">$${formatNum(i.precioBase || 0)}</td>
+              <td class="highlight">$${formatNum(ahorroUnit > 0 ? ahorroUnit : 0)}</td>
+              <td class="highlight">$${formatNum(i.ahorroMensual || 0)}</td>
+              <td class="highlight">$${formatNum(i.ahorroAcumulado || 0)}</td>
+              <td><span class="timing-chip ${itClass}" style="font-size:11px; padding:4px 10px;">${itLabel}</span></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+        <tfoot>
+          <tr style="background:var(--surface); font-weight:700;">
+            <td colspan="6" style="padding:12px 16px; color:var(--ink); font-size:13px;">TOTALES</td>
+            <td class="highlight" style="padding:12px 16px; font-size:15px;">$${formatNum(totalAhorroMensual)}</td>
+            <td class="highlight" style="padding:12px 16px; font-size:15px;">$${formatNum(totalAhorroAcum)}</td>
+            <td></td>
+          </tr>
+          <tr style="background:rgba(45,106,79,0.06);">
+            <td colspan="6" style="padding:10px 16px; font-size:12px; color:var(--green);">Ahorro ajustado por riesgo (${p.riesgo}%)</td>
+            <td style="padding:10px 16px; font-weight:800; color:var(--green); font-size:15px;">$${formatNum(ahorroAjustado)}</td>
+            <td style="padding:10px 16px; font-weight:800; color:var(--green); font-size:15px;">$${formatNum(totalAhorroAcum * (1 - (p.riesgo||0)/100))}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- CALIDAD Y CONTACTO -->
+    <div class="field-row field-row-2">
+      <div class="card">
+        <div class="section-title" style="margin-bottom:16px;">📋 Criterios de Calidad</div>
+        <div class="checklist">
+          ${renderCheckItem('Emite factura', p.factura)}
+          ${renderCheckItem('Tiene ruta a sucursales', p.ruta)}
+          ${renderCheckItem('Entrega a puerta', p.entrega)}
+          ${renderCheckItem('Logística inversa', p.logistica)}
+          ${renderCheckItem('Fabricante directo', p.marca)}
+          ${renderCheckItem('Referencias en la zona', p.referencias)}
+        </div>
+        <div class="divider"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:13px; color:var(--ink-muted);">Lead Time</span>
+          <span class="badge ${(p.leadtime||99) <= 3 ? 'badge-green' : 'badge-amber'}">${p.leadtime || '—'} días</span>
+        </div>
+        <div style="margin-top:12px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span style="font-size:13px; font-weight:600;">Nivel de Riesgo Global</span>
+            <span style="font-weight:700; color:${getRiskColor(p.riesgo)};">${p.riesgo || 0}%</span>
+          </div>
+          <div class="risk-bar"><div class="risk-fill" style="width:${p.riesgo||0}%"></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title" style="margin-bottom:16px;">📞 Datos de Contacto</div>
+        <div style="display:flex; flex-direction:column; gap:10px; font-size:13px; color:var(--ink-light);">
+          ${p.contacto ? `<div>👤 <strong>Contacto:</strong> ${p.contacto}</div>` : ''}
+          ${p.telefono ? `<div>📞 <strong>Tel:</strong> ${p.telefono}</div>` : ''}
+          ${p.email ? `<div>✉️ <strong>Email:</strong> ${p.email}</div>` : ''}
+          ${p.whatsapp ? `<div>💬 <strong>WhatsApp:</strong> ${p.whatsapp}</div>` : ''}
+          ${p.zona ? `<div>🗺 <strong>Zona:</strong> ${p.zona}</div>` : ''}
+          ${p.notas ? `<div style="margin-top:8px; padding:10px; background:var(--surface); border-radius:8px; color:var(--ink-muted);">📝 ${p.notas}</div>` : ''}
+        </div>
+        <div class="divider"></div>
+        <div class="section-title" style="font-size:14px; margin-bottom:8px;">⏱ Costo de Riesgo de Cambio</div>
+        <div class="stats-grid stats-grid-2" style="gap:8px;">
+          ${[
+            ['Pruebas', insumos.reduce((a,i)=>a+(i.pruebas||0),0)],
+            ['Ajustes', insumos.reduce((a,i)=>a+(i.ajustes||0),0)],
+            ['Capacitación', insumos.reduce((a,i)=>a+(i.cap||0),0)],
+            ['Mermas', insumos.reduce((a,i)=>a+(i.mermas||0),0)]
+          ].map(([label, val]) => `
+            <div style="background:var(--surface); border-radius:8px; padding:10px 12px;">
+              <div style="font-size:11px; color:var(--ink-muted); font-weight:700; text-transform:uppercase;">${label}</div>
+              <div style="font-size:16px; font-weight:700; color:var(--ink);">$${formatNum(val)}</div>
+            </div>
+          `).join('')}
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding-top:12px; border-top:1px solid var(--surface-3);">
+          <strong>Total:</strong>
+          <span style="font-family:'DM Serif Display',serif; font-size:20px;">$${formatNum(totalCostoRiesgo)}</span>
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('radar-detail-view').innerHTML = html;
+}
+
+function renderCheckItem(label, value) {
+  let cls, icon;
+  if (value === 'si' || value === true) { cls = 'yes'; icon = '✓'; }
+  else if (value === 'no' || value === false) { cls = 'no'; icon = '✗'; }
+  else { cls = 'pending'; icon = '?'; }
+  return `<div class="check-item"><div class="check-dot ${cls}">${icon}</div>${label}</div>`;
+}
+
+function setDetailView(view, btn) {
+  document.querySelectorAll('#view-toggle .toggle-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const sf = document.getElementById('sucursal-filter');
+  if (sf) sf.style.display = view === 'comparativo' ? 'flex' : 'none';
+}
+
+function filterBySucursal(sucursal, btn) {
+  document.querySelectorAll('.sucursal-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // filter logic would apply here
+}
+
+async function activateProvider(id) {
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'updateProvider', id, estado: 'activo' })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('✅ Proveedor marcado como Activo', 'success');
+      openProviderDetail(id);
+    }
+  } catch(e) {
+    showToast('Error al actualizar estado', 'error');
+  }
+}
+
+async function updateSystemId(id, idSistema) {
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'updateProvider', id, idSistema })
+    });
+    showToast('✅ ID del sistema actualizado', 'success');
+  } catch(e) { /* silent */ }
+}
+
+// ═══════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════
+function formatNum(n, decimals = 2) {
+  if (isNaN(n)) return '0.00';
+  return Number(n).toLocaleString('es-MX', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  try {
+    return new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+  } catch { return d; }
+}
+
+function getRiskColor(pct) {
+  if (!pct) return 'var(--ink-muted)';
+  if (pct <= 30) return 'var(--green)';
+  if (pct <= 60) return '#92600a';
+  return 'var(--red)';
+}
+
+function fillRegisterForm(p) {
+  const fields = ['nombre','contacto','telefono','email','whatsapp','notas','sucursal','zona'];
+  fields.forEach(f => {
+    const el = document.getElementById(`reg-${f}`);
+    if (el && p[f]) el.value = p[f];
+  });
+  const crits = ['factura','ruta','entrega','logistica','marca','referencias'];
+  crits.forEach(c => {
+    const el = document.getElementById(`crit-${c}`);
+    if (el && p[c]) el.value = p[c];
+  });
+  const lt = document.getElementById('crit-leadtime');
+  if (lt && p.leadtime) lt.value = p.leadtime;
+  calculatedRisk = p.riesgo || 0;
+  updateRiskDisplay(calculatedRisk);
+  document.getElementById('risk-manual').value = calculatedRisk;
+  document.getElementById('risk-manual-val').textContent = calculatedRisk + '%';
+}
+
+let toastTimeout;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast show ${type}`;
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+</script>
+</body>
+</html>
