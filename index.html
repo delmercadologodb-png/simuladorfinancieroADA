@@ -3964,25 +3964,58 @@ async function rcBuildReport() {
 
   // ── Tabla de análisis por insumo (precio actual vs nuevo) ──
   // precioActual = último precioUnit del historial de cada insumo
+  // También calculamos el período histórico analizado
+  let globalMinFecha = null, globalMaxFecha = null;
+
   const insumoAnalysisRows = rcState.equivs.map(eq => {
-    // Tomar el último precioUnit disponible de cualquier sucursal
-    const histC = eq.claveCentro  ? (histCache[`${eq.claveCentro}|Centro`]  || []) : [];
+    const histC   = eq.claveCentro  ? (histCache[`${eq.claveCentro}|Centro`]  || []) : [];
     const histCib = eq.claveCibeles ? (histCache[`${eq.claveCibeles}|Cibeles`] || []) : [];
-    const allHist = [...histC, ...histCib].sort((a, b) => a.fecha.localeCompare(b.fecha));
-    const lastPrecioActual = allHist.length > 0 ? allHist[allHist.length - 1].precioUnit : 0;
-    const ahorroUnit = lastPrecioActual > 0 && eq.precioBase > 0 ? lastPrecioActual - eq.precioBase : 0;
-    return { eq, lastPrecioActual, ahorroUnit };
-  });
+
+    // Track global date range
+    [...histC, ...histCib].forEach(p => {
+      if (!globalMinFecha || p.fecha < globalMinFecha) globalMinFecha = p.fecha;
+      if (!globalMaxFecha || p.fecha > globalMaxFecha) globalMaxFecha = p.fecha;
+    });
+
+    // Build one row per sucursal that has data
+    const rows = [];
+
+    if (histC.length > 0) {
+      const lastPrecioActual = histC[histC.length - 1].precioUnit;
+      const ahorroUnit = lastPrecioActual > 0 && eq.precioBase > 0 ? lastPrecioActual - eq.precioBase : 0;
+      rows.push({ sucursal: 'Centro', lastPrecioActual, ahorroUnit, eq });
+    }
+    if (histCib.length > 0) {
+      const lastPrecioActual = histCib[histCib.length - 1].precioUnit;
+      const ahorroUnit = lastPrecioActual > 0 && eq.precioBase > 0 ? lastPrecioActual - eq.precioBase : 0;
+      rows.push({ sucursal: 'Cibeles', lastPrecioActual, ahorroUnit, eq });
+    }
+    // If no history yet, show one row with dashes
+    if (rows.length === 0) {
+      rows.push({ sucursal: eq.claveCentro ? 'Centro' : 'Cibeles', lastPrecioActual: 0, ahorroUnit: 0, eq });
+    }
+    return rows;
+  }).flat();
+
+  // Format period label
+  const fmtFecha = f => f ? new Date(f).toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric' }) : '—';
+  const periodLabel = globalMinFecha && globalMaxFecha
+    ? `${fmtFecha(globalMinFecha)} — ${fmtFecha(globalMaxFecha)}`
+    : 'Sin historial';
 
   const insumoTableHTML = `
   <div style="margin-top:28px; padding-top:24px; border-top:2px solid var(--surface-3);">
-    <div style="font-family:'DM Serif Display',serif; font-size:18px; margin-bottom:4px; color:var(--ink);">Análisis por Insumo</div>
+    <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin-bottom:4px;">
+      <div style="font-family:'DM Serif Display',serif; font-size:18px; color:var(--ink);">Análisis por Insumo</div>
+      <div style="font-size:12px; color:var(--ink-muted);">📅 Período analizado: <strong>${periodLabel}</strong></div>
+    </div>
     <div style="font-size:12px; color:var(--ink-muted); margin-bottom:16px;">Comparativo de precios por unidad base — último precio registrado vs. proveedor nuevo</div>
     <div class="card" style="padding:0; overflow:hidden;">
       <table class="compare-table">
         <thead>
           <tr>
             <th>Insumo</th>
+            <th>Sucursal</th>
             <th>Unidad</th>
             <th>Precio actual</th>
             <th>Precio nuevo</th>
@@ -3990,14 +4023,15 @@ async function rcBuildReport() {
           </tr>
         </thead>
         <tbody>
-          ${insumoAnalysisRows.map(({ eq, lastPrecioActual, ahorroUnit }) => `
+          ${insumoAnalysisRows.map(({ eq, sucursal, lastPrecioActual, ahorroUnit }) => `
           <tr>
             <td class="td-name">${eq.desc}</td>
+            <td><span class="badge ${sucursal === 'Centro' ? 'badge-blue' : 'badge-green'}" style="font-size:10px;">📍 ${sucursal}</span></td>
             <td>${eq.unidad || '—'}</td>
-            <td class="td-amount">$${formatNum(lastPrecioActual)}</td>
+            <td class="td-amount">${lastPrecioActual > 0 ? '$' + formatNum(lastPrecioActual) : '—'}</td>
             <td class="td-amount">$${formatNum(eq.precioBase)}</td>
-            <td class="highlight" style="${ahorroUnit > 0 ? '' : 'color:var(--red);'}">
-              ${ahorroUnit > 0 ? '+' : ''}$${formatNum(ahorroUnit)}
+            <td class="highlight" style="${ahorroUnit < 0 ? 'color:var(--red);background:var(--red-pale);' : ''}">
+              ${lastPrecioActual > 0 ? (ahorroUnit >= 0 ? '+' : '') + '$' + formatNum(ahorroUnit) : '—'}
             </td>
           </tr>`).join('')}
         </tbody>
@@ -4011,7 +4045,7 @@ async function rcBuildReport() {
     <div>
       <div style="font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--green); margin-bottom:4px;">Ahorro total consolidado</div>
       <div style="font-family:'DM Serif Display',serif; font-size:32px; color:var(--green);">$${formatNum(grandTotal)}</div>
-      <div style="font-size:12px; color:var(--ink-muted);">Histórico + proyección a ${horizonLabel} · ${rcState.equivs.length} insumo${rcState.equivs.length !== 1 ? 's' : ''} · 2 sucursales</div>
+      <div style="font-size:12px; color:var(--ink-muted);">Histórico + proyección a ${horizonLabel} · ${rcState.equivs.length} insumo${rcState.equivs.length !== 1 ? 's' : ''} · 2 sucursales · período ${periodLabel}</div>
     </div>
     <div class="stats-grid stats-grid-2 no-print" style="gap:12px;">
       <div class="stat-card accent-blue" style="padding:12px 16px;">
@@ -4125,16 +4159,46 @@ function rcPreparePrintArea(reportHTML) {
 }
 
 function rcExportPDF() {
-  document.getElementById('print-area').style.display = 'block';
-  window.print();
-  setTimeout(() => { document.getElementById('print-area').style.display = 'none'; }, 500);
+  // Build a self-contained HTML document and print it in a hidden iframe
+  // so the main page layout is never disrupted
+  const printArea = document.getElementById('print-area');
+  const content = printArea.innerHTML;
+
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+  doc.open();
+  doc.write(`<!DOCTYPE html><html><head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+      ${[...document.styleSheets].map(ss => {
+        try { return [...ss.cssRules].map(r => r.cssText).join('\n'); } catch(e) { return ''; }
+      }).join('\n')}
+      @media print {
+        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      }
+      .no-print, button { display: none !important; }
+      body { font-family: 'DM Sans', sans-serif; background: #fff; color: #0f1117; margin: 0; padding: 0; }
+    </style>
+  </head><body>${content}</body></html>`);
+  doc.close();
+
+  iframe.contentWindow.focus();
+  setTimeout(() => {
+    iframe.contentWindow.print();
+    setTimeout(() => document.body.removeChild(iframe), 1000);
+  }, 500);
 }
 
 // Close modals on overlay click
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', e => {
-    // modal-register nunca se cierra con click accidental fuera
+    // Estos modales nunca se cierran con click accidental fuera
     if (overlay.id === 'modal-register') return;
+    if (overlay.id === 'modal-consolidado') return;
     if (e.target === overlay) overlay.classList.remove('open');
   });
 });
