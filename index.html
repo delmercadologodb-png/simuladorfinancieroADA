@@ -1423,16 +1423,8 @@ body {
 }
 
 @media print {
-  body * { visibility: hidden; }
-  #print-area, #print-area * { visibility: visible; }
-  #print-area {
-    position: absolute; left: 0; top: 0; width: 100%;
-    font-family: 'DM Sans', sans-serif; color: #0f1117; padding: 32px;
-  }
-  .no-print { display: none !important; }
-  .detail-table th, .detail-table td { font-size: 11px; padding: 5px 8px; }
+  /* PDF export uses iframe — no main-page print styles needed */
 }
-#print-area { display: none; }
 </style>
 </head>
 <body>
@@ -1990,8 +1982,7 @@ body {
   </div>
 </div>
 
-<!-- Hidden print area -->
-<div id="print-area"></div>
+<!-- Hidden print area removed — PDF uses iframe -->
 
 <script>
 // ═══════════════════════════════════════════
@@ -4127,8 +4118,9 @@ async function rcBuildReport() {
 
   document.getElementById('rc-report-content').innerHTML = reportHTML;
 
-  // PDF: inject the same styles + same HTML into print-area so it renders identically
-  rcPreparePrintArea(reportHTML);
+  // Store for PDF export — never touch the DOM
+  rcState._reportHTML = reportHTML;
+  rcState._reportDate = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
 function rcSetHorizon(h) {
@@ -4136,61 +4128,114 @@ function rcSetHorizon(h) {
   rcBuildReport();
 }
 
-function rcPreparePrintArea(reportHTML) {
-  const now = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
-  // Clone all CSS variables and classes from the main document so print renders identically
-  const allStyles = [...document.styleSheets].map(ss => {
-    try { return [...ss.cssRules].map(r => r.cssText).join('\n'); } catch(e) { return ''; }
-  }).join('\n');
-
-  document.getElementById('print-area').innerHTML = `
-    <style>${allStyles}
-      body { font-family: 'DM Sans', sans-serif; background: #fff; color: #0f1117; }
-      .no-print { display: none !important; }
-      .modal-overlay, .modal { display: block !important; position: static !important; padding: 0 !important; max-width: 100% !important; box-shadow: none !important; }
-    </style>
-    <div style="padding:32px; font-family:'DM Sans',sans-serif; color:#0f1117; max-width:900px; margin:0 auto;">
-      <div style="margin-bottom:24px; padding-bottom:16px; border-bottom:2px solid #0f1117;">
-        <div style="font-family:'DM Serif Display',serif; font-size:24px; font-weight:700; margin-bottom:4px;">Reporte Consolidado de Ahorro</div>
-        <div style="font-size:13px; color:#555;">Generado el ${now} · ${rcState.equivs.length} insumo${rcState.equivs.length!==1?'s':''} · 2 sucursales</div>
-      </div>
-      ${reportHTML}
-    </div>`;
-}
-
 function rcExportPDF() {
-  // Build a self-contained HTML document and print it in a hidden iframe
-  // so the main page layout is never disrupted
-  const printArea = document.getElementById('print-area');
-  const content = printArea.innerHTML;
+  if (!rcState._reportHTML) { showToast('Genera el reporte primero', 'error'); return; }
+
+  // Collect only the CSS variables (:root block) and key rule groups — avoid full dump
+  // which would inject display:flex on modal-overlay etc. into the iframe
+  const cssVars = `
+    :root {
+      --ink:#0f1117; --ink-light:#3a3d4a; --ink-muted:#7a7f94;
+      --surface:#f7f6f2; --surface-2:#eeecea; --surface-3:#e4e1dc;
+      --gold:#c9a84c; --gold-light:#f0d98a; --gold-dark:#a07830;
+      --green:#2d6a4f; --green-light:#52b788; --green-pale:#d8f3dc;
+      --red:#9b2335; --red-light:#e76f51; --red-pale:#fde8e4;
+      --blue:#1d3557; --blue-light:#457b9d; --blue-pale:#dde9f4;
+      --amber:#e9c46a; --white:#ffffff;
+      --shadow-sm:0 1px 3px rgba(15,17,23,0.08);
+      --shadow-md:0 4px 16px rgba(15,17,23,0.10);
+      --radius:12px; --radius-lg:20px;
+    }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'DM Sans',sans-serif; background:#fff; color:#0f1117; padding:32px; max-width:900px; margin:0 auto; }
+    /* Typography */
+    .section-title { font-family:'DM Serif Display',serif; font-size:18px; color:var(--ink); }
+    /* Badges */
+    .badge { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+    .badge-green { background:var(--green-pale); color:var(--green); }
+    .badge-red { background:var(--red-pale); color:var(--red); }
+    .badge-amber { background:rgba(233,196,106,0.2); color:#92600a; }
+    .badge-blue { background:var(--blue-pale); color:var(--blue); }
+    .badge-gray { background:var(--surface-2); color:var(--ink-muted); }
+    .badge-gold { background:rgba(201,168,76,0.15); color:var(--gold-dark); }
+    /* Cards */
+    .card { background:#fff; border:1px solid var(--surface-3); border-radius:var(--radius); padding:24px; }
+    .stat-card { background:#fff; border:1px solid var(--surface-3); border-radius:var(--radius); padding:20px; }
+    .stat-label { font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-muted); margin-bottom:8px; }
+    .stat-value { font-family:'DM Serif Display',serif; font-size:28px; color:var(--ink); line-height:1; margin-bottom:4px; }
+    .stat-sub { font-size:12px; color:var(--ink-muted); }
+    .stat-card.accent-green { border-left:3px solid var(--green-light); }
+    .stat-card.accent-gold  { border-left:3px solid var(--gold); }
+    .stat-card.accent-red   { border-left:3px solid var(--red-light); }
+    .stat-card.accent-blue  { border-left:3px solid var(--blue-light); }
+    /* Grids */
+    .stats-grid { display:grid; gap:16px; }
+    .stats-grid-2 { grid-template-columns:repeat(2,1fr); }
+    .stats-grid-3 { grid-template-columns:repeat(3,1fr); }
+    .field-row-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    /* Tables */
+    .compare-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .compare-table th { padding:12px 16px; font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-muted); border-bottom:2px solid var(--surface-3); text-align:left; }
+    .compare-table th.highlight { background:rgba(45,106,79,0.06); color:var(--green); }
+    .compare-table td { padding:12px 16px; border-bottom:1px solid var(--surface-2); vertical-align:middle; }
+    .compare-table td.highlight { background:rgba(45,106,79,0.04); font-weight:700; color:var(--green); }
+    .detail-table { width:100%; border-collapse:collapse; font-size:12px; min-width:640px; }
+    .detail-table th { text-align:left; font-size:11px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-muted); padding:10px 14px; border-bottom:2px solid var(--surface-3); white-space:nowrap; }
+    .detail-table th.col-saving { background:rgba(45,106,79,0.06); color:var(--green); }
+    .detail-table th.col-acum { background:rgba(45,106,79,0.10); color:var(--green); }
+    .detail-table td { padding:8px 14px; border-bottom:1px solid var(--surface-2); color:var(--ink-light); vertical-align:middle; }
+    .detail-table td.col-saving { background:rgba(45,106,79,0.04); color:var(--green); font-weight:700; }
+    .detail-table td.col-acum { background:rgba(45,106,79,0.08); color:var(--green); font-weight:800; }
+    .detail-table-wrap { overflow-x:auto; margin-top:16px; }
+    .td-name { color:var(--ink); font-weight:500; }
+    .td-amount { font-weight:600; color:var(--ink); }
+    /* Report-specific */
+    .rc-grand-total { background:linear-gradient(135deg,rgba(45,106,79,0.08),rgba(45,106,79,0.04)); border:1.5px solid var(--green-pale); border-radius:var(--radius-lg); padding:20px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:20px; }
+    .rc-report-section { margin-bottom:28px; }
+    .rc-report-section-title { font-family:'DM Serif Display',serif; font-size:16px; color:var(--ink); border-bottom:2px solid var(--surface-3); padding-bottom:8px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; }
+    .proy-badge { font-size:9px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(201,168,76,0.15); color:var(--gold-dark); padding:2px 6px; border-radius:4px; margin-left:6px; }
+    .proyectado-row td { background:rgba(201,168,76,0.03); }
+    .divider { height:1px; background:var(--surface-3); margin:24px 0; }
+    .checklist { display:flex; flex-direction:column; gap:8px; }
+    .check-item { display:flex; align-items:center; gap:8px; font-size:12px; }
+    /* Hide interactive elements */
+    .no-print, button, select, input { display:none !important; }
+    @media print {
+      body { -webkit-print-color-adjust:exact; print-color-adjust:exact; padding:16px; }
+      .card { break-inside:avoid; }
+    }`;
+
+  const now = rcState._reportDate || new Date().toLocaleDateString('es-MX', { day:'2-digit', month:'long', year:'numeric' });
 
   const iframe = document.createElement('iframe');
-  iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
+  iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1280px;height:900px;border:none;visibility:hidden;';
   document.body.appendChild(iframe);
 
   const doc = iframe.contentDocument || iframe.contentWindow.document;
   doc.open();
-  doc.write(`<!DOCTYPE html><html><head>
+  doc.write(`<!DOCTYPE html><html lang="es"><head>
     <meta charset="UTF-8">
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <style>
-      ${[...document.styleSheets].map(ss => {
-        try { return [...ss.cssRules].map(r => r.cssText).join('\n'); } catch(e) { return ''; }
-      }).join('\n')}
-      @media print {
-        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      }
-      .no-print, button { display: none !important; }
-      body { font-family: 'DM Sans', sans-serif; background: #fff; color: #0f1117; margin: 0; padding: 0; }
-    </style>
-  </head><body>${content}</body></html>`);
+    <style>${cssVars}</style>
+  </head><body>
+    <div style="margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #0f1117;">
+      <div style="font-family:'DM Serif Display',serif;font-size:24px;font-weight:700;margin-bottom:4px;">Reporte Consolidado de Ahorro</div>
+      <div style="font-size:13px;color:#555;">Generado el ${now} · ${rcState.equivs.length} insumo${rcState.equivs.length!==1?'s':''} · 2 sucursales</div>
+    </div>
+    ${rcState._reportHTML}
+  </body></html>`);
   doc.close();
 
-  iframe.contentWindow.focus();
-  setTimeout(() => {
-    iframe.contentWindow.print();
-    setTimeout(() => document.body.removeChild(iframe), 1000);
-  }, 500);
+  // Wait for fonts, then print
+  iframe.contentWindow.addEventListener('load', () => {
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      setTimeout(() => {
+        try { document.body.removeChild(iframe); } catch(e) {}
+      }, 2000);
+    }, 300);
+  });
 }
 
 // Close modals on overlay click
