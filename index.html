@@ -1130,6 +1130,237 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--ink-muted); }
+
+/* ═══════════════════════════════════════════
+   CHART MODULE STYLES
+═══════════════════════════════════════════ */
+.chart-card {
+  background: var(--white);
+  border: 1px solid var(--surface-3);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.chart-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.chart-insumo-select {
+  background: var(--surface);
+  border: 1.5px solid var(--surface-3);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+  outline: none;
+  transition: var(--transition);
+}
+.chart-insumo-select:focus { border-color: var(--gold); }
+
+.horizon-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid var(--surface-3);
+  background: var(--white);
+  color: var(--ink-muted);
+  transition: var(--transition);
+  font-family: 'DM Sans', sans-serif;
+}
+.horizon-btn.active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--white);
+}
+.horizon-btn:hover:not(.active) { border-color: var(--ink-muted); color: var(--ink); }
+
+.chart-legend {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--ink-muted);
+  font-weight: 500;
+}
+
+.legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-line {
+  width: 24px; height: 2px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+.legend-dashed {
+  width: 24px; height: 0;
+  border-top: 2px dashed;
+  flex-shrink: 0;
+}
+
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  user-select: none;
+}
+
+.chart-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Tooltip */
+.chart-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--ink);
+  color: var(--white);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.6;
+  box-shadow: var(--shadow-lg);
+  min-width: 180px;
+  max-width: 240px;
+  z-index: 50;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.chart-tooltip.visible { opacity: 1; }
+.chart-tooltip-title {
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 4px;
+  color: var(--gold-light);
+}
+.chart-tooltip-row { display: flex; justify-content: space-between; gap: 12px; }
+.chart-tooltip-label { color: rgba(255,255,255,0.6); }
+.chart-tooltip-val { font-weight: 600; }
+.chart-tooltip-tag {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.chart-tooltip-tag.proyectado { background: rgba(201,168,76,0.25); color: var(--gold-light); }
+.chart-tooltip-tag.historico { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); }
+
+/* Saving bar below chart */
+.saving-band {
+  margin-top: 12px;
+  background: var(--green-pale);
+  border-radius: 8px;
+  padding: 10px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.saving-band-item { font-size: 13px; color: var(--green); }
+.saving-band-item strong { font-weight: 700; }
+
+/* Detail Modal */
+.detail-table-wrap {
+  overflow-x: auto;
+  margin-top: 16px;
+}
+
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 640px;
+}
+
+.detail-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  padding: 10px 14px;
+  border-bottom: 2px solid var(--surface-3);
+  white-space: nowrap;
+}
+
+.detail-table th.col-saving { background: rgba(45,106,79,0.06); color: var(--green); }
+.detail-table th.col-acum { background: rgba(45,106,79,0.10); color: var(--green); }
+
+.detail-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--surface-2);
+  color: var(--ink-light);
+  vertical-align: middle;
+}
+
+.detail-table tr:last-child td { border-bottom: none; }
+.detail-table tr.proyectado-row td { background: rgba(201,168,76,0.05); }
+.detail-table td.col-saving { background: rgba(45,106,79,0.04); color: var(--green); font-weight: 700; }
+.detail-table td.col-acum { background: rgba(45,106,79,0.08); color: var(--green); font-weight: 800; }
+.detail-table td .proy-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(201,168,76,0.15);
+  color: var(--gold-dark);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+
+.chart-btn-detail {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid var(--surface-3);
+  background: var(--white);
+  color: var(--ink-light);
+  transition: var(--transition);
+  font-family: 'DM Sans', sans-serif;
+}
+.chart-btn-detail:hover { border-color: var(--ink); color: var(--ink); background: var(--surface); }
 </style>
 </head>
 <body>
@@ -1608,6 +1839,15 @@ body {
       <button class="modal-close" onclick="closeModal('modal-detail')">×</button>
     </div>
     <div id="detail-content"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL: SAVINGS DETAIL
+═══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-savings-detail">
+  <div class="modal modal-lg" style="max-width:1000px;">
+    <div id="savings-detail-content"></div>
   </div>
 </div>
 
@@ -2309,6 +2549,9 @@ function renderProviderDetail(p) {
       </div>
     </div>
 
+    <!-- CHART BLOCK (injected by initChartBlock) -->
+    <div id="chart-block"></div>
+
     <!-- SUCURSAL TOGGLE -->
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
       <div class="section-title">Análisis por Insumo</div>
@@ -2440,6 +2683,8 @@ function renderProviderDetail(p) {
     </div>`;
 
   document.getElementById('radar-detail-view').innerHTML = html;
+  // Initialize chart after DOM is ready
+  initChartBlock(p);
 }
 
 function renderCheckItem(label, value) {
@@ -2537,6 +2782,552 @@ function showToast(msg, type = '') {
   t.className = `toast show ${type}`;
   clearTimeout(toastTimeout);
   toastTimeout = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ═══════════════════════════════════════════
+// CHART MODULE
+// ═══════════════════════════════════════════
+
+// chartState.viewMode: 'consolidado' | 'insumo'
+// chartState.allHistoryData: { [claveInsumo]: [{fecha,cantidad,precioUnit,proveedor,numero}] }
+let chartState = {
+  insumos: [],
+  selectedIndex: 0,   // used only in 'insumo' mode
+  viewMode: 'consolidado',
+  horizon: 1,
+  historyData: [],        // active dataset (single insumo or merged)
+  allHistoryData: {},     // cache per clave
+  precioNuevo: 0,         // used in insumo mode
+  unidad: '',
+  providerName: '',
+  loaded: false,
+};
+
+let tooltipEl = null;
+
+async function initChartBlock(p) {
+  chartState.insumos = p.insumos || [];
+  chartState.providerName = p.nombre || '';
+  chartState.horizon = 1;
+  chartState.loaded = false;
+  chartState.viewMode = 'consolidado';
+  chartState.allHistoryData = {};
+  const container = document.getElementById('chart-block');
+  if (!container) return;
+  if (chartState.insumos.length === 0) { container.innerHTML = ''; return; }
+  chartState.selectedIndex = 0;
+  renderChartShell(container);
+  await loadAllHistoryData();
+}
+
+function renderChartShell(container) {
+  const insumos = chartState.insumos;
+  const insumoOptions = insumos.map((ins, i) =>
+    `<option value="${i}">${ins.desc || ins.clave || 'Insumo ' + (i+1)}</option>`
+  ).join('');
+
+  container.innerHTML = `
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="section-title" style="margin-bottom:2px;">📈 Comportamiento Histórico de Compras</div>
+        <div style="font-size:12px; color:var(--ink-muted);">Precio real vs. precio simulado con el nuevo proveedor</div>
+      </div>
+      <div class="chart-controls">
+        <button class="chart-btn-detail" onclick="openSavingsDetail()">📋 Ver detalle de ahorro</button>
+      </div>
+    </div>
+
+    <!-- View mode toggle -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+      <div style="display:flex; gap:6px; align-items:center;">
+        <div class="toggle-group" style="padding:3px; gap:2px;">
+          <button class="toggle-btn active" id="chart-mode-consol" onclick="setChartMode('consolidado', this)">📊 Todos los insumos</button>
+          <button class="toggle-btn" id="chart-mode-insumo" onclick="setChartMode('insumo', this)">🔍 Por insumo</button>
+        </div>
+        <select class="chart-insumo-select" id="chart-insumo-sel" onchange="onChartInsumoChange(this.value)" style="display:none;">
+          ${insumoOptions}
+        </select>
+      </div>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <span style="font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-muted);">Proyectar:</span>
+        <button class="horizon-btn active" data-h="1" onclick="setHorizon(1, this)">1 mes</button>
+        <button class="horizon-btn" data-h="3" onclick="setHorizon(3, this)">3 meses</button>
+        <button class="horizon-btn" data-h="6" onclick="setHorizon(6, this)">6 meses</button>
+        <button class="horizon-btn" data-h="12" onclick="setHorizon(12, this)">12 meses</button>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="chart-legend" style="margin-bottom:12px;">
+      <div class="legend-item"><div class="legend-line" style="background:var(--blue-light);"></div>Proveedor histórico</div>
+      <div class="legend-item"><div class="legend-line" style="background:var(--green-light);"></div>Con nuevo proveedor</div>
+      <div class="legend-item"><div class="legend-dashed" style="border-color:var(--gold);"></div>Proyección</div>
+    </div>
+
+    <!-- Chart canvas -->
+    <div class="chart-wrap" id="chart-wrap">
+      <div class="loading-state" style="height:300px;"><div class="loader"></div><span>Cargando historial...</span></div>
+      <div class="chart-tooltip" id="chart-tooltip"></div>
+    </div>
+
+    <!-- Summary band -->
+    <div class="saving-band" id="chart-saving-band" style="display:none;">
+      <div class="saving-band-item">💰 Ahorro histórico total: <strong id="cb-hist-total">—</strong></div>
+      <div class="saving-band-item">📅 Ahorro proyectado (<span id="cb-horizon-label">1 mes</span>): <strong id="cb-proj-total">—</strong></div>
+      <div class="saving-band-item">📦 Compras analizadas: <strong id="cb-count">—</strong></div>
+    </div>
+  </div>`;
+
+  tooltipEl = document.getElementById('chart-tooltip');
+}
+
+// Load history for ALL insumos in parallel, then draw
+async function loadAllHistoryData() {
+  const insumos = chartState.insumos;
+  await Promise.all(insumos.map(async (ins) => {
+    try {
+      const res = await fetch(`${APPS_SCRIPT_URL}?action=getPurchaseHistory&idinsumo=${encodeURIComponent(ins.clave)}&sucursal=${encodeURIComponent(ins.sucursal || '')}`);
+      const data = await res.json();
+      chartState.allHistoryData[ins.clave] = (data.purchases || [])
+        .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+    } catch(e) {
+      chartState.allHistoryData[ins.clave] = [];
+    }
+  }));
+  chartState.loaded = true;
+  applyChartMode();
+}
+
+function setChartMode(mode, btn) {
+  chartState.viewMode = mode;
+  document.getElementById('chart-mode-consol').classList.toggle('active', mode === 'consolidado');
+  document.getElementById('chart-mode-insumo').classList.toggle('active', mode === 'insumo');
+  const sel = document.getElementById('chart-insumo-sel');
+  if (sel) sel.style.display = mode === 'insumo' ? 'inline-block' : 'none';
+  if (chartState.loaded) applyChartMode();
+}
+
+function applyChartMode() {
+  if (chartState.viewMode === 'consolidado') {
+    buildConsolidatedData();
+  } else {
+    buildInsumoData(chartState.selectedIndex);
+  }
+  drawChart();
+}
+
+// Merge all insumos into consolidated timeline by date (monthly buckets)
+function buildConsolidatedData() {
+  const insumos = chartState.insumos;
+  // Build a map: dateKey -> { montoProv, montoNuevo, count, proveedores }
+  const byDate = {};
+  insumos.forEach(ins => {
+    const hist = chartState.allHistoryData[ins.clave] || [];
+    hist.forEach(p => {
+      const key = p.fecha;
+      if (!byDate[key]) byDate[key] = { fecha: p.fecha, montoProv: 0, montoNuevo: 0, count: 0, proveedores: new Set(), cantidad: 0 };
+      byDate[key].montoProv += (p.cantidad || 0) * (p.precioUnit || 0);
+      byDate[key].montoNuevo += (p.cantidad || 0) * (ins.precioBase || 0);
+      byDate[key].count++;
+      byDate[key].proveedores.add(p.proveedor || '—');
+      byDate[key].cantidad += (p.cantidad || 0);
+    });
+  });
+
+  chartState.historyData = Object.values(byDate)
+    .sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
+    .map(d => ({
+      fecha: d.fecha,
+      montoProv: d.montoProv,
+      montoNuevo: d.montoNuevo,
+      cantidad: d.cantidad,
+      precioUnit: d.montoProv / (d.cantidad || 1),
+      proveedor: [...d.proveedores].join(', '),
+      isConsolidated: true,
+      insumoCount: d.count
+    }));
+
+  // For consolidated, precioNuevo doesn't apply directly (already baked in)
+  chartState.precioNuevo = 0;
+  chartState.unidad = 'MXN';
+}
+
+function buildInsumoData(idx) {
+  const ins = chartState.insumos[idx];
+  if (!ins) return;
+  chartState.precioNuevo = ins.precioBase || 0;
+  chartState.unidad = ins.unidad || '';
+  const raw = chartState.allHistoryData[ins.clave] || [];
+  chartState.historyData = raw.map(p => ({
+    fecha: p.fecha,
+    cantidad: p.cantidad || 0,
+    precioUnit: p.precioUnit || 0,
+    montoProv: (p.cantidad || 0) * (p.precioUnit || 0),
+    montoNuevo: (p.cantidad || 0) * (ins.precioBase || 0),
+    proveedor: p.proveedor || '—',
+    numero: p.numero || ''
+  }));
+}
+
+function onChartInsumoChange(val) {
+  chartState.selectedIndex = parseInt(val);
+  buildInsumoData(chartState.selectedIndex);
+  drawChart();
+}
+
+function setHorizon(h, btn) {
+  chartState.horizon = h;
+  document.querySelectorAll('.horizon-btn:not(.modal-h-btn)').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const label = document.getElementById('cb-horizon-label');
+  if (label) label.textContent = h + (h === 1 ? ' mes' : ' meses');
+  if (chartState.loaded) drawChart();
+}
+
+function buildProjections() {
+  const history = chartState.historyData;
+  const horizon = chartState.horizon;
+  const isConsolidated = chartState.viewMode === 'consolidado';
+
+  if (history.length === 0) return [];
+
+  const lastPurchases = history.slice(-3);
+  const avgMontoProv = lastPurchases.reduce((a, p) => a + p.montoProv, 0) / lastPurchases.length;
+  const avgMontoNuevo = lastPurchases.reduce((a, p) => a + p.montoNuevo, 0) / lastPurchases.length;
+  const avgQty = lastPurchases.reduce((a, p) => a + (p.cantidad || 0), 0) / lastPurchases.length;
+
+  const avgInterval = lastPurchases.length >= 2
+    ? (new Date(lastPurchases[lastPurchases.length-1].fecha) - new Date(lastPurchases[0].fecha)) / (lastPurchases.length - 1)
+    : 30 * 24 * 3600 * 1000;
+  const lastDate = new Date(history[history.length - 1].fecha);
+  const purchasesPerMonth = avgInterval > 0 ? Math.max(1, Math.round((30 * 24 * 3600 * 1000) / avgInterval)) : 2;
+  const totalProjected = Math.max(horizon * purchasesPerMonth, horizon);
+  const lastProv = history[history.length-1].proveedor || 'Proveedor actual';
+  const lastPrecioUnit = history[history.length-1].precioUnit || 0;
+
+  return Array.from({ length: totalProjected }, (_, i) => ({
+    fecha: new Date(lastDate.getTime() + (i+1) * avgInterval),
+    cantidad: avgQty,
+    montoProv: isConsolidated ? avgMontoProv : avgQty * lastPrecioUnit,
+    montoNuevo: isConsolidated ? avgMontoNuevo : avgQty * chartState.precioNuevo,
+    proveedor: lastProv,
+    precioUnit: lastPrecioUnit,
+    proyectado: true,
+    numero: 'P' + (i+1),
+    isConsolidated
+  }));
+}
+
+function drawChart() {
+  const wrap = document.getElementById('chart-wrap');
+  if (!wrap) return;
+  const history = chartState.historyData;
+  const unidad = chartState.viewMode === 'consolidado' ? '' : chartState.unidad;
+  const isConsolidated = chartState.viewMode === 'consolidado';
+  const projections = buildProjections();
+
+  // In consolidated mode, historyData already has montoProv/montoNuevo baked in.
+  // In insumo mode, same structure.
+  const allHist = history.map((p, i) => ({
+    fecha: new Date(p.fecha),
+    cantidad: p.cantidad || 0,
+    precioUnit: p.precioUnit || 0,
+    montoProv: p.montoProv || 0,
+    montoNuevo: p.montoNuevo || 0,
+    proyectado: false,
+    proveedor: p.proveedor || '—',
+    numero: p.numero || (i + 1),
+    insumoCount: p.insumoCount
+  }));
+
+  const histSaving = allHist.reduce((a, p) => a + Math.max(0, p.montoProv - p.montoNuevo), 0);
+  const projSaving = projections.reduce((a, p) => a + Math.max(0, p.montoProv - p.montoNuevo), 0);
+
+  const band = document.getElementById('chart-saving-band');
+  if (band) {
+    band.style.display = 'flex';
+    document.getElementById('cb-hist-total').textContent = '$' + formatNum(histSaving);
+    document.getElementById('cb-proj-total').textContent = '$' + formatNum(projSaving);
+    document.getElementById('cb-count').textContent = allHist.length;
+  }
+
+  const allPoints = [...allHist, ...projections];
+
+  if (allPoints.length === 0) {
+    wrap.innerHTML = `<div class="empty-state" style="padding:40px; height:300px;">
+      <div class="empty-icon">📊</div>
+      <h3 class="empty-title">Sin historial de compras</h3>
+      <p class="empty-desc">Aún no hay registros para este insumo en el período seleccionado.</p>
+    </div><div class="chart-tooltip" id="chart-tooltip"></div>`;
+    tooltipEl = document.getElementById('chart-tooltip');
+    return;
+  }
+
+  const W = wrap.clientWidth || 700;
+  const H = 300;
+  const PAD = { top: 20, right: 28, bottom: 44, left: 66 };
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top - PAD.bottom;
+
+  const allMontos = allPoints.flatMap(p => [p.montoProv, p.montoNuevo]);
+  const maxY = Math.max(...allMontos) * 1.18 || 1000;
+  const minX = allPoints[0].fecha.getTime();
+  const maxX = allPoints[allPoints.length - 1].fecha.getTime();
+  const xRange = maxX - minX || 1;
+
+  const xS = d => PAD.left + ((d.getTime() - minX) / xRange) * plotW;
+  const yS = v => PAD.top + plotH - (v / maxY) * plotH;
+
+  // Grid & Y-axis
+  let grid = '';
+  for (let i = 0; i <= 4; i++) {
+    const v = maxY * (i / 4);
+    const y = yS(v).toFixed(1);
+    const label = v >= 1000 ? '$' + (v/1000).toFixed(1) + 'k' : '$' + v.toFixed(0);
+    grid += `<line x1="${PAD.left}" y1="${y}" x2="${PAD.left+plotW}" y2="${y}" stroke="#eeecea" stroke-width="1"/>
+    <text x="${PAD.left - 6}" y="${y}" text-anchor="end" dominant-baseline="middle" font-size="10" fill="#7a7f94">${label}</text>`;
+  }
+
+  // X labels
+  const labelEvery = Math.max(1, Math.ceil(allPoints.length / 8));
+  let xLabels = '';
+  allPoints.forEach((p, i) => {
+    if (i % labelEvery !== 0 && i !== allPoints.length - 1) return;
+    const x = xS(p.fecha).toFixed(1);
+    const lbl = p.fecha.toLocaleDateString('es-MX', { day:'2-digit', month:'short' });
+    const col = p.proyectado ? '#a07830' : '#7a7f94';
+    xLabels += `<text x="${x}" y="${PAD.top + plotH + 14}" text-anchor="middle" font-size="10" fill="${col}">${lbl}${p.proyectado ? ' ✦' : ''}</text>`;
+  });
+
+  // Projection divider
+  let projLine = '';
+  if (allHist.length > 0 && projections.length > 0) {
+    const px = xS(allHist[allHist.length-1].fecha).toFixed(1);
+    projLine = `<line x1="${px}" y1="${PAD.top}" x2="${px}" y2="${PAD.top+plotH}" stroke="#c9a84c" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.7"/>
+    <text x="${parseFloat(px)+5}" y="${PAD.top+12}" font-size="9" fill="#a07830" font-weight="700" letter-spacing="0.05em">PROYECCIÓN →</text>`;
+  }
+
+  // Line paths
+  const linePath = (pts) => pts.map((p, i) => `${i===0?'M':'L'}${xS(p.fecha).toFixed(1)},${yS(p.montoProv).toFixed(1)}`).join(' ');
+  const linePathNew = (pts) => pts.map((p, i) => `${i===0?'M':'L'}${xS(p.fecha).toFixed(1)},${yS(p.montoNuevo).toFixed(1)}`).join(' ');
+
+  let lines = '';
+  if (allHist.length > 1) {
+    lines += `<path d="${linePath(allHist)}" fill="none" stroke="#457b9d" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    lines += `<path d="${linePathNew(allHist)}" fill="none" stroke="#52b788" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+  }
+
+  // Projection continuation lines
+  if (projections.length > 0 && allHist.length > 0) {
+    const lastH = allHist[allHist.length-1];
+    const startProv = `M${xS(lastH.fecha).toFixed(1)},${yS(lastH.montoProv).toFixed(1)} `;
+    const startNew = `M${xS(lastH.fecha).toFixed(1)},${yS(lastH.montoNuevo).toFixed(1)} `;
+    lines += `<path d="${startProv}${projections.map(p=>`L${xS(p.fecha).toFixed(1)},${yS(p.montoProv).toFixed(1)}`).join(' ')}" fill="none" stroke="#457b9d" stroke-width="2" stroke-dasharray="7,4" stroke-linecap="round"/>`;
+    lines += `<path d="${startNew}${projections.map(p=>`L${xS(p.fecha).toFixed(1)},${yS(p.montoNuevo).toFixed(1)}`).join(' ')}" fill="none" stroke="#52b788" stroke-width="2" stroke-dasharray="7,4" stroke-linecap="round"/>`;
+  }
+
+  // Dots
+  const makeDots = (pts, isProj) => pts.map((p, i) => {
+    const cx = xS(p.fecha).toFixed(1);
+    const idx = isProj ? i : i;
+    const dtype = isProj ? 'proj' : 'hist';
+    return `
+    <circle class="cdot" cx="${cx}" cy="${yS(p.montoProv).toFixed(1)}" r="5" fill="${isProj?'none':'#457b9d'}" stroke="#457b9d" stroke-width="${isProj?1.5:0}" style="cursor:pointer;" data-i="${idx}" data-t="${dtype}-prov"/>
+    <circle class="cdot" cx="${cx}" cy="${yS(p.montoNuevo).toFixed(1)}" r="5" fill="${isProj?'none':'#52b788'}" stroke="#52b788" stroke-width="${isProj?1.5:0}" style="cursor:pointer;" data-i="${idx}" data-t="${dtype}-new"/>`;
+  }).join('');
+
+  wrap.innerHTML = `
+  <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:300px;overflow:visible;">
+    ${grid}
+    ${projLine}
+    ${lines}
+    ${makeDots(allHist, false)}
+    ${makeDots(projections, true)}
+    ${xLabels}
+    <line x1="${PAD.left}" y1="${PAD.top}" x2="${PAD.left}" y2="${PAD.top+plotH}" stroke="#e4e1dc" stroke-width="1"/>
+    <line x1="${PAD.left}" y1="${PAD.top+plotH}" x2="${PAD.left+plotW}" y2="${PAD.top+plotH}" stroke="#e4e1dc" stroke-width="1"/>
+  </svg>
+  <div class="chart-tooltip" id="chart-tooltip"></div>`;
+
+  tooltipEl = document.getElementById('chart-tooltip');
+
+  // Bind tooltip events
+  wrap.querySelectorAll('.cdot').forEach(dot => {
+    dot.addEventListener('mouseenter', e => {
+      const i = parseInt(dot.dataset.i);
+      const t = dot.dataset.t;
+      const isProj = t.startsWith('proj');
+      const p = isProj ? projections[i] : allHist[i];
+      if (!p) return;
+      const ahorro = Math.max(0, p.montoProv - p.montoNuevo);
+      const dateStr = p.fecha.toLocaleDateString('es-MX', {day:'2-digit', month:'long', year:'numeric'});
+      tooltipEl.innerHTML = `
+        <div class="chart-tooltip-title">📅 ${dateStr}</div>
+        ${isConsolidated && p.insumoCount ? `<div class="chart-tooltip-row"><span class="chart-tooltip-label">Insumos incluidos:</span><span class="chart-tooltip-val">${p.insumoCount}</span></div>` : ''}
+        ${!isConsolidated ? `<div class="chart-tooltip-row"><span class="chart-tooltip-label">Proveedor:</span><span class="chart-tooltip-val">${p.proveedor}</span></div>` : ''}
+        ${!isConsolidated ? `<div class="chart-tooltip-row"><span class="chart-tooltip-label">Cantidad:</span><span class="chart-tooltip-val">${formatNum(p.cantidad, 2)} ${unidad}</span></div>` : ''}
+        <div class="chart-tooltip-row"><span class="chart-tooltip-label">${isProj ? 'Monto est. pagado:' : 'Monto pagado:'}</span><span class="chart-tooltip-val">$${formatNum(p.montoProv)}${isProj ? ' <em style="opacity:.6;font-size:10px;">proyectada</em>' : ''}</span></div>
+        <div class="chart-tooltip-row"><span class="chart-tooltip-label">Con proveedor nuevo:</span><span class="chart-tooltip-val" style="color:#52b788;">$${formatNum(p.montoNuevo)}${isProj ? ' <em style="opacity:.6;font-size:10px;">proyectada</em>' : ''}</span></div>
+        ${ahorro > 0 ? `<div class="chart-tooltip-row"><span class="chart-tooltip-label">${isProj?'Ahorro proyectado:':'Ahorro en esta compra:'}</span><span class="chart-tooltip-val" style="color:#52b788;">$${formatNum(ahorro)}</span></div>` : ''}
+        <span class="chart-tooltip-tag ${isProj ? 'proyectado' : 'historico'}">${isProj ? '⚡ Proyectada' : '📋 Historial real'}</span>`;
+      positionTooltip(e, wrap);
+      tooltipEl.classList.add('visible');
+    });
+    dot.addEventListener('mousemove', e => positionTooltip(e, wrap));
+    dot.addEventListener('mouseleave', () => tooltipEl.classList.remove('visible'));
+  });
+}
+
+function positionTooltip(e, wrap) {
+  if (!tooltipEl) return;
+  wrap = wrap || document.getElementById('chart-wrap');
+  if (!wrap) return;
+  const rect = wrap.getBoundingClientRect();
+  let x = e.clientX - rect.left + 16;
+  let y = e.clientY - rect.top - 20;
+  if (x + 240 > rect.width) x = e.clientX - rect.left - 250;
+  if (y < 0) y = 4;
+  tooltipEl.style.left = x + 'px';
+  tooltipEl.style.top = y + 'px';
+}
+
+// ─── SAVINGS DETAIL MODAL ───
+function openSavingsDetail() {
+  const horizon = chartState.horizon;
+  const horizonLabel = horizon === 1 ? '1 mes' : `${horizon} meses`;
+  const isConsolidated = chartState.viewMode === 'consolidado';
+
+  // Build consolidated summary rows (all insumos combined)
+  const insumos = chartState.insumos;
+  let grandHistTotal = 0, grandProjTotal = 0;
+
+  // Per-insumo tables for the drill-down tab
+  const insumoTablesHTML = insumos.map(ins => {
+    const raw = chartState.allHistoryData[ins.clave] || [];
+    const hist = raw.map((p, i) => ({
+      numero: p.numero || (i+1),
+      fecha: new Date(p.fecha),
+      proveedor: p.proveedor || '—',
+      cantidad: p.cantidad || 0,
+      montoProv: (p.cantidad||0) * (p.precioUnit||0),
+      montoNuevo: (p.cantidad||0) * (ins.precioBase||0),
+      proyectado: false
+    }));
+
+    // Build projections for this insumo
+    const tempState = { historyData: hist.map(h=>({...h, fecha: h.fecha.toISOString().split('T')[0]})), precioNuevo: ins.precioBase||0, horizon, viewMode: 'insumo' };
+    const saved = {...chartState};
+    Object.assign(chartState, tempState);
+    const projs = buildProjections();
+    Object.assign(chartState, saved);
+
+    const allRows = [...hist, ...projs.map((p,i) => ({
+      numero: 'P'+(i+1), fecha: p.fecha, proveedor: p.proveedor,
+      cantidad: p.cantidad, montoProv: p.montoProv, montoNuevo: p.montoNuevo, proyectado: true
+    }))];
+
+    const histSav = hist.reduce((a,r) => a + Math.max(0, r.montoProv-r.montoNuevo), 0);
+    const projSav = projs.reduce((a,p) => a + Math.max(0, p.montoProv-p.montoNuevo), 0);
+    grandHistTotal += histSav;
+    grandProjTotal += projSav;
+
+    let acum = 0;
+    const rows = allRows.map(r => {
+      const ahorro = Math.max(0, r.montoProv - r.montoNuevo);
+      acum += ahorro;
+      return `<tr class="${r.proyectado?'proyectado-row':''}">
+        <td>${r.numero}${r.proyectado?'<span class="proy-badge">PROYEC.</span>':''}</td>
+        <td>${r.fecha.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'})}</td>
+        <td>${r.proveedor}</td>
+        <td>${formatNum(r.cantidad,2)} ${ins.unidad||''}</td>
+        <td>$${formatNum(r.montoProv)}${r.proyectado?' <span style="font-size:10px;opacity:.5;">est.</span>':''}</td>
+        <td>$${formatNum(r.montoNuevo)}${r.proyectado?' <span style="font-size:10px;opacity:.5;">est.</span>':''}</td>
+        <td class="col-saving">$${formatNum(ahorro)}</td>
+        <td class="col-acum">$${formatNum(acum)}</td>
+      </tr>`;
+    }).join('');
+
+    return `
+    <div style="margin-bottom:28px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+        <div>
+          <span style="font-family:'DM Serif Display',serif; font-size:16px;">${ins.desc || ins.clave}</span>
+          <span class="badge badge-gray" style="margin-left:8px;">${ins.unidad||''}</span>
+        </div>
+        <div style="display:flex; gap:16px; font-size:12px;">
+          <span style="color:var(--blue-light);">Histórico: <strong>$${formatNum(histSav)}</strong></span>
+          <span style="color:var(--gold-dark);">Proyectado: <strong>$${formatNum(projSav)}</strong></span>
+          <span style="color:var(--green);">Total: <strong>$${formatNum(histSav+projSav)}</strong></span>
+        </div>
+      </div>
+      <div class="detail-table-wrap">
+        <table class="detail-table">
+          <thead><tr>
+            <th># Compra</th><th>Fecha</th><th>Proveedor</th><th>Cantidad</th>
+            <th>Monto pagado</th><th>Con nuevo proveedor</th>
+            <th class="col-saving">Ahorro</th><th class="col-acum">Ahorro acumulado</th>
+          </tr></thead>
+          <tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:var(--ink-muted);padding:20px;">Sin historial</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('<div style="height:1px;background:var(--surface-3);margin:8px 0 28px;"></div>');
+
+  const grandTotal = grandHistTotal + grandProjTotal;
+
+  document.getElementById('savings-detail-content').innerHTML = `
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+    <div>
+      <h2 class="modal-title">Detalle de Ahorro — ${chartState.providerName}</h2>
+      <p class="modal-subtitle">Historial de compras + proyección de <strong>${horizonLabel}</strong> · ${insumos.length} insumo${insumos.length!==1?'s':''}</p>
+    </div>
+    <button class="modal-close" onclick="closeModal('modal-savings-detail')">×</button>
+  </div>
+
+  <!-- KPIs -->
+  <div class="stats-grid stats-grid-3" style="margin-bottom:20px;">
+    <div class="stat-card accent-blue">
+      <div class="stat-label">Ahorro histórico total</div>
+      <div class="stat-value" style="font-size:22px; color:var(--blue-light);">$${formatNum(grandHistTotal)}</div>
+      <div class="stat-sub">Todos los insumos · compras reales</div>
+    </div>
+    <div class="stat-card accent-gold">
+      <div class="stat-label">Ahorro proyectado (${horizonLabel})</div>
+      <div class="stat-value" style="font-size:22px; color:var(--gold-dark);">$${formatNum(grandProjTotal)}</div>
+      <div class="stat-sub">Basado en ritmo de compra promedio</div>
+    </div>
+    <div class="stat-card accent-green">
+      <div class="stat-label">Ahorro acumulado total</div>
+      <div class="stat-value" style="font-size:22px;">$${formatNum(grandTotal)}</div>
+      <div class="stat-sub">Histórico + proyección combinados</div>
+    </div>
+  </div>
+
+  <!-- Horizon toggle -->
+  <div style="display:flex; align-items:center; gap:8px; margin-bottom:20px; flex-wrap:wrap;">
+    <span style="font-size:12px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-muted);">Cambiar proyección:</span>
+    <button class="horizon-btn modal-h-btn ${horizon===1?'active':''}" onclick="changeModalHorizon(1)">1 mes</button>
+    <button class="horizon-btn modal-h-btn ${horizon===3?'active':''}" onclick="changeModalHorizon(3)">3 meses</button>
+    <button class="horizon-btn modal-h-btn ${horizon===6?'active':''}" onclick="changeModalHorizon(6)">6 meses</button>
+    <button class="horizon-btn modal-h-btn ${horizon===12?'active':''}" onclick="changeModalHorizon(12)">12 meses</button>
+  </div>
+
+  <!-- Per-insumo tables -->
+  ${insumoTablesHTML || '<div class="empty-state"><div class="empty-icon">📊</div><h3 class="empty-title">Sin datos</h3></div>'}`;
+
+  document.getElementById('modal-savings-detail').classList.add('open');
+}
+
+function changeModalHorizon(h) {
+  chartState.horizon = h;
+  document.querySelectorAll('.horizon-btn:not(.modal-h-btn)').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.h) === h);
+  });
+  const label = document.getElementById('cb-horizon-label');
+  if (label) label.textContent = h + (h === 1 ? ' mes' : ' meses');
+  openSavingsDetail();
+  if (chartState.loaded) drawChart();
 }
 
 // Close modals on overlay click
