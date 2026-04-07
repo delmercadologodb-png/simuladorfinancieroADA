@@ -1710,12 +1710,11 @@ body {
       </div>
       <div class="field-row field-row-2">
         <div class="field-group">
-          <label class="field-label">Sucursal(es) que puede abastecer *</label>
+          <label class="field-label">Sucursal que abastecerá *</label>
           <select class="field-select" id="reg-sucursal">
             <option value="">Seleccionar...</option>
             <option value="Centro">Centro</option>
             <option value="Cibeles">Cibeles</option>
-            <option value="Ambas">Ambas sucursales</option>
           </select>
         </div>
         <div class="field-group">
@@ -2584,8 +2583,13 @@ function renderRadarCards(providers) {
           <!-- Header: nombre + badge estado -->
           <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
             <div>
-              <div style="font-family:'DM Serif Display',serif; font-size:17px; color:var(--ink); margin-bottom:3px;">${p.nombre}</div>
-              <div style="font-size:12px; color:var(--ink-muted);">📍 ${p.sucursal || '—'} · 📅 ${formatDate(p.fechaRegistro)}</div>
+              <div style="font-family:'DM Serif Display',serif; font-size:17px; color:var(--ink); margin-bottom:6px;">${p.nombre}</div>
+              <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                <span class="badge ${p.sucursal === 'Centro' ? 'badge-blue' : 'badge-green'}" style="font-size:11px;">
+                  📍 ${p.sucursal || '—'}
+                </span>
+                <span style="font-size:11px; color:var(--ink-muted);">📅 ${formatDate(p.fechaRegistro)}</span>
+              </div>
             </div>
             <span class="badge ${p.estado === 'activo' ? 'badge-green' : 'badge-gold'}" style="flex-shrink:0; margin-left:8px;">
               ${p.estado === 'activo' ? '✅ Activo' : '🎯 En Radar'}
@@ -2722,23 +2726,9 @@ function renderProviderDetail(p) {
       </div>
     </div>
 
-    <!-- CHART BLOCK (injected by initChartBlock) -->
-    <div id="chart-block"></div>
-
-    <!-- SUCURSAL TOGGLE -->
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+    <!-- ANÁLISIS POR INSUMO (subido antes del gráfico) -->
+    <div style="margin-bottom:16px;">
       <div class="section-title">Análisis por Insumo</div>
-      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-        <div class="toggle-group" id="view-toggle">
-          <button class="toggle-btn active" onclick="setDetailView('consolidado', this)">📊 Consolidado</button>
-          <button class="toggle-btn" onclick="setDetailView('comparativo', this)">⚖️ Centro vs Cibeles</button>
-        </div>
-        <div class="sucursal-selector" id="sucursal-filter" style="display:none;">
-          <button class="sucursal-pill active" onclick="filterBySucursal('Ambas', this)">Ambas</button>
-          <button class="sucursal-pill" onclick="filterBySucursal('Centro', this)">Centro</button>
-          <button class="sucursal-pill" onclick="filterBySucursal('Cibeles', this)">Cibeles</button>
-        </div>
-      </div>
     </div>
 
     <!-- INSUMOS TABLE -->
@@ -2798,6 +2788,9 @@ function renderProviderDetail(p) {
     </div>
 
     <!-- CALIDAD Y CONTACTO -->
+    <!-- CHART BLOCK (injected by initChartBlock, placed after table) -->
+    <div id="chart-block"></div>
+
     <div class="field-row field-row-2">
       <div class="card">
         <div class="section-title" style="margin-bottom:16px;">📋 Criterios de Calidad</div>
@@ -2983,7 +2976,7 @@ async function initChartBlock(p) {
   chartState.providerName = p.nombre || '';
   chartState.horizon = 1;
   chartState.loaded = false;
-  chartState.viewMode = 'consolidado';
+  chartState.viewMode = 'insumo';   // always start in insumo mode
   chartState.allHistoryData = {};
   const container = document.getElementById('chart-block');
   if (!container) return;
@@ -3004,23 +2997,20 @@ function renderChartShell(container) {
     <div class="chart-header">
       <div>
         <div class="section-title" style="margin-bottom:2px;">📈 Comportamiento Histórico de Compras</div>
-        <div style="font-size:12px; color:var(--ink-muted);">Precio real vs. precio simulado con el nuevo proveedor</div>
+        <div style="font-size:12px; color:var(--ink-muted);" id="chart-insumo-label">${insumos[0]?.desc || insumos[0]?.clave || '—'}</div>
       </div>
       <div class="chart-controls">
+        ${insumos.length > 1 ? `<select class="chart-insumo-select" id="chart-insumo-sel" onchange="onChartInsumoChange(this.value)">${insumoOptions}</select>` : `<div id="chart-insumo-sel" style="display:none;"></div>`}
         <button class="chart-btn-detail" onclick="openSavingsDetail()">📋 Ver detalle de ahorro</button>
       </div>
     </div>
 
-    <!-- View mode toggle -->
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
-      <div style="display:flex; gap:6px; align-items:center;">
-        <div class="toggle-group" style="padding:3px; gap:2px;">
-          <button class="toggle-btn active" id="chart-mode-consol" onclick="setChartMode('consolidado', this)">📊 Todos los insumos</button>
-          <button class="toggle-btn" id="chart-mode-insumo" onclick="setChartMode('insumo', this)">🔍 Por insumo</button>
-        </div>
-        <select class="chart-insumo-select" id="chart-insumo-sel" onchange="onChartInsumoChange(this.value)" style="display:none;">
-          ${insumoOptions}
-        </select>
+    <!-- Horizon selector -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-line" style="background:var(--blue-light);"></div>Proveedor histórico</div>
+        <div class="legend-item"><div class="legend-line" style="background:var(--green-light);"></div>Con nuevo proveedor</div>
+        <div class="legend-item"><div class="legend-dashed" style="border-color:var(--gold);"></div>Proyección</div>
       </div>
       <div style="display:flex; gap:6px; align-items:center;">
         <span style="font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-muted);">Proyectar:</span>
@@ -3032,11 +3022,7 @@ function renderChartShell(container) {
     </div>
 
     <!-- Legend -->
-    <div class="chart-legend" style="margin-bottom:12px;">
-      <div class="legend-item"><div class="legend-line" style="background:var(--blue-light);"></div>Proveedor histórico</div>
-      <div class="legend-item"><div class="legend-line" style="background:var(--green-light);"></div>Con nuevo proveedor</div>
-      <div class="legend-item"><div class="legend-dashed" style="border-color:var(--gold);"></div>Proyección</div>
-    </div>
+    <div class="chart-legend" style="margin-bottom:12px; display:none;"></div>
 
     <!-- Chart canvas -->
     <div class="chart-wrap" id="chart-wrap">
@@ -3069,24 +3055,19 @@ async function loadAllHistoryData() {
     }
   }));
   chartState.loaded = true;
-  applyChartMode();
+  buildInsumoData(chartState.selectedIndex);
+  drawChart();
 }
 
 function setChartMode(mode, btn) {
-  chartState.viewMode = mode;
-  document.getElementById('chart-mode-consol').classList.toggle('active', mode === 'consolidado');
-  document.getElementById('chart-mode-insumo').classList.toggle('active', mode === 'insumo');
-  const sel = document.getElementById('chart-insumo-sel');
-  if (sel) sel.style.display = mode === 'insumo' ? 'inline-block' : 'none';
-  if (chartState.loaded) applyChartMode();
+  // toggle buttons removed — function kept for safety only
+  chartState.viewMode = 'insumo';
+  buildInsumoData(chartState.selectedIndex);
+  drawChart();
 }
 
 function applyChartMode() {
-  if (chartState.viewMode === 'consolidado') {
-    buildConsolidatedData();
-  } else {
-    buildInsumoData(chartState.selectedIndex);
-  }
+  buildInsumoData(chartState.selectedIndex);
   drawChart();
 }
 
@@ -3145,6 +3126,10 @@ function buildInsumoData(idx) {
 
 function onChartInsumoChange(val) {
   chartState.selectedIndex = parseInt(val);
+  // Update subtitle label with selected insumo name
+  const ins = chartState.insumos[chartState.selectedIndex];
+  const labelEl = document.getElementById('chart-insumo-label');
+  if (labelEl && ins) labelEl.textContent = ins.desc || ins.clave || '—';
   buildInsumoData(chartState.selectedIndex);
   drawChart();
 }
