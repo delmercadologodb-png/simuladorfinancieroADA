@@ -3022,29 +3022,35 @@ function buildProjections() {
 
   if (history.length === 0) return [];
 
+  const toDate = v => (v instanceof Date ? v : new Date(v));
+
   const lastPurchases = history.slice(-3);
-  const avgMontoProv = lastPurchases.reduce((a, p) => a + p.montoProv, 0) / lastPurchases.length;
-  const avgMontoNuevo = lastPurchases.reduce((a, p) => a + p.montoNuevo, 0) / lastPurchases.length;
-  const avgQty = lastPurchases.reduce((a, p) => a + (p.cantidad || 0), 0) / lastPurchases.length;
+  const avgMontoProv  = lastPurchases.reduce((a, p) => a + (p.montoProv || 0), 0) / lastPurchases.length;
+  const avgMontoNuevo = lastPurchases.reduce((a, p) => a + (p.montoNuevo || 0), 0) / lastPurchases.length;
+  const avgQty        = lastPurchases.reduce((a, p) => a + (p.cantidad || 0), 0) / lastPurchases.length;
 
   const avgInterval = lastPurchases.length >= 2
-    ? (new Date(lastPurchases[lastPurchases.length-1].fecha) - new Date(lastPurchases[0].fecha)) / (lastPurchases.length - 1)
+    ? (toDate(lastPurchases[lastPurchases.length-1].fecha) - toDate(lastPurchases[0].fecha)) / (lastPurchases.length - 1)
     : 30 * 24 * 3600 * 1000;
-  const lastDate = new Date(history[history.length - 1].fecha);
-  const purchasesPerMonth = avgInterval > 0 ? Math.max(1, Math.round((30 * 24 * 3600 * 1000) / avgInterval)) : 2;
-  const totalProjected = Math.max(horizon * purchasesPerMonth, horizon);
-  const lastProv = history[history.length-1].proveedor || 'Proveedor actual';
-  const lastPrecioUnit = history[history.length-1].precioUnit || 0;
+  const safeInterval = (avgInterval > 0 && isFinite(avgInterval)) ? avgInterval : 30 * 24 * 3600 * 1000;
+
+  const lastDate      = toDate(history[history.length - 1].fecha);
+  const lastProv      = history[history.length - 1].proveedor || 'Proveedor actual';
+  // Usar el precioUnit de la última compra real como referencia del monto proyectado
+  const lastPrecioUnit = history[history.length - 1].precioUnit || 0;
+
+  const purchasesPerMonth = Math.max(1, Math.round(30 * 24 * 3600 * 1000 / safeInterval));
+  const totalProjected    = Math.max(horizon * purchasesPerMonth, horizon);
 
   return Array.from({ length: totalProjected }, (_, i) => ({
-    fecha: new Date(lastDate.getTime() + (i+1) * avgInterval),
-    cantidad: avgQty,
-    montoProv: isConsolidated ? avgMontoProv : avgQty * lastPrecioUnit,
-    montoNuevo: isConsolidated ? avgMontoNuevo : avgQty * chartState.precioNuevo,
-    proveedor: lastProv,
-    precioUnit: lastPrecioUnit,
-    proyectado: true,
-    numero: 'P' + (i+1),
+    fecha:       new Date(lastDate.getTime() + (i + 1) * safeInterval),
+    cantidad:    avgQty,
+    montoProv:   isConsolidated ? avgMontoProv : avgQty * lastPrecioUnit,
+    montoNuevo:  isConsolidated ? avgMontoNuevo : avgQty * chartState.precioNuevo,
+    proveedor:   lastProv,
+    precioUnit:  lastPrecioUnit,
+    proyectado:  true,
+    numero:      'P' + (i + 1),
     isConsolidated
   }));
 }
@@ -3235,22 +3241,45 @@ function openSavingsDetail() {
   // Per-insumo tables for the drill-down tab
   const insumoTablesHTML = insumos.map(ins => {
     const raw = chartState.allHistoryData[ins.clave] || [];
+
+    // Historial real — misma lógica que buildInsumoData
     const hist = raw.map((p, i) => ({
-      numero: p.numero || (i+1),
+      numero: p.folio || p.numero || (i + 1),
       fecha: new Date(p.fecha),
       proveedor: p.proveedor || '—',
       cantidad: p.cantidad || 0,
-      montoProv: (p.cantidad||0) * (p.precioUnit||0),
-      montoNuevo: (p.cantidad||0) * (ins.precioBase||0),
+      precioUnit: p.precioUnit || 0,
+      montoProv: (p.cantidad || 0) * (p.precioUnit || 0),
+      montoNuevo: (p.cantidad || 0) * (ins.precioBase || 0),
       proyectado: false
     }));
 
-    // Build projections for this insumo
-    const tempState = { historyData: hist.map(h=>({...h, fecha: h.fecha.toISOString().split('T')[0]})), precioNuevo: ins.precioBase||0, horizon, viewMode: 'insumo' };
-    const saved = {...chartState};
-    Object.assign(chartState, tempState);
-    const projs = buildProjections();
-    Object.assign(chartState, saved);
+    // Proyecciones — calculadas directamente sin swap de chartState
+    const projs = (() => {
+      if (hist.length === 0) return [];
+      const last3 = hist.slice(-3);
+      const avgQty    = last3.reduce((a, p) => a + p.cantidad, 0) / last3.length;
+      // Usar el precioUnit de la última compra real como base del monto proyectado
+      const lastPrecioUnit = hist[hist.length - 1].precioUnit;
+      const avgInterval = last3.length >= 2
+        ? (last3[last3.length-1].fecha - last3[0].fecha) / (last3.length - 1)
+        : 30 * 24 * 3600 * 1000;
+      const lastDate   = hist[hist.length - 1].fecha;
+      const lastProv   = hist[hist.length - 1].proveedor;
+      const perMonth   = avgInterval > 0 ? Math.max(1, Math.round(30 * 24 * 3600 * 1000 / avgInterval)) : 2;
+      const total      = Math.max(horizon * perMonth, horizon);
+
+      return Array.from({ length: total }, (_, i) => ({
+        numero: 'P' + (i + 1),
+        fecha: new Date(lastDate.getTime() + (i + 1) * avgInterval),
+        proveedor: lastProv,
+        cantidad: avgQty,
+        precioUnit: lastPrecioUnit,
+        montoProv: avgQty * lastPrecioUnit,   // ← precio real de la última compra
+        montoNuevo: avgQty * (ins.precioBase || 0),
+        proyectado: true
+      }));
+    })();
 
     const allRows = [...hist, ...projs.map((p,i) => ({
       numero: 'P'+(i+1), fecha: p.fecha, proveedor: p.proveedor,
