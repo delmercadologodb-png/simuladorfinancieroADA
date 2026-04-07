@@ -3962,6 +3962,49 @@ async function rcBuildReport() {
     </div>`;
   }).join('');
 
+  // ── Tabla de análisis por insumo (precio actual vs nuevo) ──
+  // precioActual = último precioUnit del historial de cada insumo
+  const insumoAnalysisRows = rcState.equivs.map(eq => {
+    // Tomar el último precioUnit disponible de cualquier sucursal
+    const histC = eq.claveCentro  ? (histCache[`${eq.claveCentro}|Centro`]  || []) : [];
+    const histCib = eq.claveCibeles ? (histCache[`${eq.claveCibeles}|Cibeles`] || []) : [];
+    const allHist = [...histC, ...histCib].sort((a, b) => a.fecha.localeCompare(b.fecha));
+    const lastPrecioActual = allHist.length > 0 ? allHist[allHist.length - 1].precioUnit : 0;
+    const ahorroUnit = lastPrecioActual > 0 && eq.precioBase > 0 ? lastPrecioActual - eq.precioBase : 0;
+    return { eq, lastPrecioActual, ahorroUnit };
+  });
+
+  const insumoTableHTML = `
+  <div style="margin-top:28px; padding-top:24px; border-top:2px solid var(--surface-3);">
+    <div style="font-family:'DM Serif Display',serif; font-size:18px; margin-bottom:4px; color:var(--ink);">Análisis por Insumo</div>
+    <div style="font-size:12px; color:var(--ink-muted); margin-bottom:16px;">Comparativo de precios por unidad base — último precio registrado vs. proveedor nuevo</div>
+    <div class="card" style="padding:0; overflow:hidden;">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Insumo</th>
+            <th>Unidad</th>
+            <th>Precio actual</th>
+            <th>Precio nuevo</th>
+            <th class="highlight">Ahorro / Unidad</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${insumoAnalysisRows.map(({ eq, lastPrecioActual, ahorroUnit }) => `
+          <tr>
+            <td class="td-name">${eq.desc}</td>
+            <td>${eq.unidad || '—'}</td>
+            <td class="td-amount">$${formatNum(lastPrecioActual)}</td>
+            <td class="td-amount">$${formatNum(eq.precioBase)}</td>
+            <td class="highlight" style="${ahorroUnit > 0 ? '' : 'color:var(--red);'}">
+              ${ahorroUnit > 0 ? '+' : ''}$${formatNum(ahorroUnit)}
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+
   const reportHTML = `
   <!-- AHORROS: KPI grand total -->
   <div class="rc-grand-total">
@@ -4036,6 +4079,9 @@ async function rcBuildReport() {
     </button>
   </div>
 
+  <!-- Tabla análisis por insumo -->
+  ${insumoTableHTML}
+
   <!-- Per-insumo sections -->
   ${allSectionsHTML}
 
@@ -4047,8 +4093,8 @@ async function rcBuildReport() {
 
   document.getElementById('rc-report-content').innerHTML = reportHTML;
 
-  // Also populate hidden print area
-  rcPreparePrintArea(grandTotal, grandHistTotal, grandProjTotal, grandSpendProv, grandSpendNuevo, horizonLabel, allSectionsHTML, providerInfoHTML);
+  // PDF: inject the same styles + same HTML into print-area so it renders identically
+  rcPreparePrintArea(reportHTML);
 }
 
 function rcSetHorizon(h) {
@@ -4056,42 +4102,26 @@ function rcSetHorizon(h) {
   rcBuildReport();
 }
 
-function rcPreparePrintArea(grandTotal, grandHistTotal, grandProjTotal, grandSpendProv, grandSpendNuevo, horizonLabel, sectionsHTML, providerInfoHTML) {
+function rcPreparePrintArea(reportHTML) {
   const now = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
+  // Clone all CSS variables and classes from the main document so print renders identically
+  const allStyles = [...document.styleSheets].map(ss => {
+    try { return [...ss.cssRules].map(r => r.cssText).join('\n'); } catch(e) { return ''; }
+  }).join('\n');
+
   document.getElementById('print-area').innerHTML = `
-  <div style="margin-bottom:24px; border-bottom:2px solid #0f1117; padding-bottom:16px;">
-    <div style="font-family:serif; font-size:22px; font-weight:700; margin-bottom:4px;">Reporte Consolidado de Ahorro</div>
-    <div style="font-size:13px; color:#555;">Generado el ${now} · Proyección: ${horizonLabel} · ${rcState.equivs.length} insumos · 2 sucursales</div>
-  </div>
-  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:20px;">
-    <div style="border:1px solid #ccc; border-radius:8px; padding:14px;">
-      <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#555; margin-bottom:6px;">Ahorro histórico</div>
-      <div style="font-size:22px; font-weight:700;">$${formatNum(grandHistTotal)}</div>
-    </div>
-    <div style="border:1px solid #ccc; border-radius:8px; padding:14px;">
-      <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#555; margin-bottom:6px;">Proyectado (${horizonLabel})</div>
-      <div style="font-size:22px; font-weight:700;">$${formatNum(grandProjTotal)}</div>
-    </div>
-    <div style="border:2px solid #2d6a4f; border-radius:8px; padding:14px; background:#f0faf4;">
-      <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#2d6a4f; margin-bottom:6px;">Total ahorros</div>
-      <div style="font-size:22px; font-weight:700; color:#2d6a4f;">$${formatNum(grandTotal)}</div>
-    </div>
-  </div>
-  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
-    <div style="border:1px solid #ccc; border-radius:8px; padding:14px;">
-      <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#555; margin-bottom:6px;">Gasto total — Proveedor actual</div>
-      <div style="font-size:22px; font-weight:700;">$${formatNum(grandSpendProv)}</div>
-    </div>
-    <div style="border:2px solid #2d6a4f; border-radius:8px; padding:14px; background:#f0faf4;">
-      <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#2d6a4f; margin-bottom:6px;">Gasto total — Proveedor nuevo</div>
-      <div style="font-size:22px; font-weight:700; color:#2d6a4f;">$${formatNum(grandSpendNuevo)}</div>
-    </div>
-  </div>
-  ${sectionsHTML}
-  <div style="margin-top:32px; padding-top:20px; border-top:2px solid #ccc;">
-    <div style="font-family:serif; font-size:18px; font-weight:700; margin-bottom:16px;">Información del Proveedor</div>
-    ${providerInfoHTML}
-  </div>`;
+    <style>${allStyles}
+      body { font-family: 'DM Sans', sans-serif; background: #fff; color: #0f1117; }
+      .no-print { display: none !important; }
+      .modal-overlay, .modal { display: block !important; position: static !important; padding: 0 !important; max-width: 100% !important; box-shadow: none !important; }
+    </style>
+    <div style="padding:32px; font-family:'DM Sans',sans-serif; color:#0f1117; max-width:900px; margin:0 auto;">
+      <div style="margin-bottom:24px; padding-bottom:16px; border-bottom:2px solid #0f1117;">
+        <div style="font-family:'DM Serif Display',serif; font-size:24px; font-weight:700; margin-bottom:4px;">Reporte Consolidado de Ahorro</div>
+        <div style="font-size:13px; color:#555;">Generado el ${now} · ${rcState.equivs.length} insumo${rcState.equivs.length!==1?'s':''} · 2 sucursales</div>
+      </div>
+      ${reportHTML}
+    </div>`;
 }
 
 function rcExportPDF() {
