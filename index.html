@@ -1578,6 +1578,9 @@ body {
 
       <!-- SINGLE PROVIDER DETAIL VIEW -->
       <div id="radar-detail-view" style="display:none"></div>
+
+      <!-- REPORTE CONSOLIDADO VIEW (página completa) -->
+      <div id="radar-reporte-view" style="display:none"></div>
     </div>
 
     <!-- ─── MÓDULO 2: HISTÓRICO ─── -->
@@ -1936,8 +1939,6 @@ body {
       <div class="rc-step-dot active" id="rc-dot-1"><div class="num">1</div><span>Proveedores e insumos</span></div>
       <div class="rc-step-line" id="rc-line-1"></div>
       <div class="rc-step-dot" id="rc-dot-2"><div class="num">2</div><span>Equivalencias por sucursal</span></div>
-      <div class="rc-step-line" id="rc-line-2"></div>
-      <div class="rc-step-dot" id="rc-dot-3"><div class="num">3</div><span>Reporte</span></div>
     </div>
 
     <!-- PASO 1: Selección de proveedores e insumos -->
@@ -1966,15 +1967,8 @@ body {
       <div id="rc-equiv-list"></div>
     </div>
 
-    <!-- PASO 3: Reporte -->
-    <div class="rc-step" id="rc-step-3">
-      <div id="rc-report-content">
-        <div class="loading-state"><div class="loader"></div><span>Generando reporte...</span></div>
-      </div>
-    </div>
-
     <!-- Footer buttons -->
-    <div class="modal-footer no-print" style="margin-top:24px;">
+    <div class="modal-footer" style="margin-top:24px;">
       <button class="btn btn-ghost" id="rc-btn-back" onclick="rcStep('back')" style="display:none;">← Atrás</button>
       <button class="btn btn-outline" onclick="closeModal('modal-consolidado')" id="rc-btn-cancel">Cancelar</button>
       <button class="btn btn-gold" id="rc-btn-next" onclick="rcStep('next')">Continuar →</button>
@@ -2071,12 +2065,14 @@ function showModule(name) {
   if (name === 'radar') {
     document.getElementById('radar-list-view').style.display = 'none';
     document.getElementById('radar-detail-view').style.display = 'none';
+    document.getElementById('radar-reporte-view').style.display = 'none';
   }
 }
 
 function showRadarList() {
   document.getElementById('radar-list-view').style.display = 'block';
   document.getElementById('radar-detail-view').style.display = 'none';
+  document.getElementById('radar-reporte-view').style.display = 'none';
   loadRadarProviders();
 }
 
@@ -3536,48 +3532,45 @@ async function rcStep(dir) {
       if (!rcCollectStep1()) return;
       rcState.step = 2;
       await rcBuildStep2();
+      rcUpdateStepUI();
     } else if (rcState.step === 2) {
       if (!rcCollectStep2()) return;
-      rcState.step = 3;
+      // Close modal, render report as full page
+      closeModal('modal-consolidado');
       await rcBuildReport();
     }
   } else {
-    rcState.step = Math.max(1, rcState.step - 1);
-    if (rcState.step === 1) await rcLoadStep1();
-    if (rcState.step === 2) await rcBuildStep2();
+    if (rcState.step === 2) {
+      rcState.step = 1;
+      await rcLoadStep1();
+      rcUpdateStepUI();
+    }
   }
-  rcUpdateStepUI();
 }
 
 function rcUpdateStepUI() {
-  [1, 2, 3].forEach(i => {
-    document.getElementById(`rc-step-${i}`).classList.toggle('active', i === rcState.step);
+  [1, 2].forEach(i => {
+    const step = document.getElementById(`rc-step-${i}`);
+    if (step) step.classList.toggle('active', i === rcState.step);
     const dot = document.getElementById(`rc-dot-${i}`);
-    dot.classList.toggle('active', i === rcState.step);
-    dot.classList.toggle('done', i < rcState.step);
+    if (dot) {
+      dot.classList.toggle('active', i === rcState.step);
+      dot.classList.toggle('done', i < rcState.step);
+    }
     const line = document.getElementById(`rc-line-${i}`);
     if (line) line.style.background = i < rcState.step ? 'var(--green)' : 'var(--surface-3)';
   });
 
-  document.getElementById('rc-btn-back').style.display = rcState.step > 1 ? 'inline-flex' : 'none';
-  const nextBtn = document.getElementById('rc-btn-next');
+  const backBtn   = document.getElementById('rc-btn-back');
+  const nextBtn   = document.getElementById('rc-btn-next');
   const cancelBtn = document.getElementById('rc-btn-cancel');
+  if (backBtn)   backBtn.style.display   = rcState.step > 1 ? 'inline-flex' : 'none';
+  if (nextBtn)   nextBtn.textContent     = rcState.step === 2 ? '📊 Generar Reporte →' : 'Continuar →';
+  if (cancelBtn) cancelBtn.textContent   = 'Cancelar';
 
-  if (rcState.step === 3) {
-    nextBtn.style.display = 'none';
-    cancelBtn.textContent = 'Cerrar';
-  } else {
-    nextBtn.style.display = 'inline-flex';
-    nextBtn.textContent = rcState.step === 2 ? '📊 Generar Reporte →' : 'Continuar →';
-    cancelBtn.textContent = 'Cancelar';
-  }
-
-  const subtitles = [
-    'Selecciona proveedores e insumos para analizar',
-    'Define equivalencias entre sucursales',
-    'Ahorro histórico y proyectado consolidado'
-  ];
-  document.getElementById('rc-subtitle').textContent = subtitles[rcState.step - 1];
+  const subtitles = ['Selecciona proveedores e insumos', 'Define equivalencias entre sucursales'];
+  const subtitleEl = document.getElementById('rc-subtitle');
+  if (subtitleEl) subtitleEl.textContent = subtitles[rcState.step - 1] || '';
 }
 
 // ── PASO 1: cargar proveedores con sus insumos ──
@@ -3759,10 +3752,16 @@ function rcCollectStep2() {
   return true;
 }
 
-// ── PASO 3: Generar reporte ──
+// ── PASO 3 (página completa): Generar reporte ──
 async function rcBuildReport() {
-  document.getElementById('rc-report-content').innerHTML =
-    '<div class="loading-state"><div class="loader"></div><span>Cargando historial de compras...</span></div>';
+  // Show full-page report view, hide list/detail views
+  showModule('radar');
+  document.getElementById('radar-list-view').style.display = 'none';
+  document.getElementById('radar-detail-view').style.display = 'none';
+  const reporteView = document.getElementById('radar-reporte-view');
+  reporteView.style.display = 'block';
+  reporteView.innerHTML = '<div class="loading-state" style="padding:80px 0;"><div class="loader"></div><span>Cargando historial de compras...</span></div>';
+  window.scrollTo(0, 0);
 
   const horizon = rcState.horizon;
 
@@ -4036,9 +4035,9 @@ async function rcBuildReport() {
     <div>
       <div style="font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--green); margin-bottom:4px;">Ahorro total consolidado</div>
       <div style="font-family:'DM Serif Display',serif; font-size:32px; color:var(--green);">$${formatNum(grandTotal)}</div>
-      <div style="font-size:12px; color:var(--ink-muted);">Histórico + proyección a ${horizonLabel} · ${rcState.equivs.length} insumo${rcState.equivs.length !== 1 ? 's' : ''} · 2 sucursales · período ${periodLabel}</div>
+      <div style="font-size:12px; color:var(--ink-muted);">Histórico + proyección a ${horizonLabel} · período ${periodLabel}</div>
     </div>
-    <div class="stats-grid stats-grid-2 no-print" style="gap:12px;">
+    <div class="stats-grid stats-grid-2" style="gap:12px;">
       <div class="stat-card accent-blue" style="padding:12px 16px;">
         <div class="stat-label">Ahorro histórico</div>
         <div class="stat-value" style="font-size:20px; color:var(--blue-light);">$${formatNum(grandHistTotal)}</div>
@@ -4090,20 +4089,6 @@ async function rcBuildReport() {
     </div>
   </div>
 
-  <!-- Horizon + export controls -->
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;" class="no-print">
-    <div style="display:flex; gap:6px; align-items:center;">
-      <span style="font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-muted);">Proyectar:</span>
-      <button class="horizon-btn rc-h-btn ${horizon===1?'active':''}" onclick="rcSetHorizon(1)">1 mes</button>
-      <button class="horizon-btn rc-h-btn ${horizon===3?'active':''}" onclick="rcSetHorizon(3)">3 meses</button>
-      <button class="horizon-btn rc-h-btn ${horizon===6?'active':''}" onclick="rcSetHorizon(6)">6 meses</button>
-      <button class="horizon-btn rc-h-btn ${horizon===12?'active':''}" onclick="rcSetHorizon(12)">12 meses</button>
-    </div>
-    <button class="btn btn-outline" onclick="rcExportPDF()" style="gap:6px;">
-      🖨️ Exportar PDF
-    </button>
-  </div>
-
   <!-- Tabla análisis por insumo -->
   ${insumoTableHTML}
 
@@ -4116,11 +4101,40 @@ async function rcBuildReport() {
     ${providerInfoHTML}
   </div>`;
 
-  document.getElementById('rc-report-content').innerHTML = reportHTML;
+  const now = new Date().toLocaleDateString('es-MX', { day:'2-digit', month:'long', year:'numeric' });
 
-  // Store for PDF export — never touch the DOM
+  reporteView.innerHTML = `
+    <!-- Breadcrumb + header -->
+    <div style="margin-bottom:28px;">
+      <div class="breadcrumb" style="margin-bottom:8px;">
+        <a onclick="showModule('home')">🏠 Inicio</a>
+        <span>›</span>
+        <a onclick="showRadarList()">Proveedores en Radar</a>
+        <span>›</span>
+        <span>Reporte Consolidado</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+        <div>
+          <h2 class="module-title">📊 Reporte Consolidado de Ahorro</h2>
+          <p class="module-subtitle">Generado el ${now} · ${rcState.equivs.length} insumo${rcState.equivs.length!==1?'s':''} · 2 sucursales</p>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+          <div style="display:flex; gap:6px; align-items:center;">
+            <span style="font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-muted);">Proyectar:</span>
+            <button class="horizon-btn rc-h-btn ${horizon===1?'active':''}" onclick="rcSetHorizon(1)">1 mes</button>
+            <button class="horizon-btn rc-h-btn ${horizon===3?'active':''}" onclick="rcSetHorizon(3)">3 meses</button>
+            <button class="horizon-btn rc-h-btn ${horizon===6?'active':''}" onclick="rcSetHorizon(6)">6 meses</button>
+            <button class="horizon-btn rc-h-btn ${horizon===12?'active':''}" onclick="rcSetHorizon(12)">12 meses</button>
+          </div>
+          <button class="btn btn-outline" onclick="rcExportPDF()">🖨️ Exportar PDF</button>
+        </div>
+      </div>
+    </div>
+
+    ${reportHTML}`;
+
   rcState._reportHTML = reportHTML;
-  rcState._reportDate = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
+  rcState._reportDate = now;
 }
 
 function rcSetHorizon(h) {
