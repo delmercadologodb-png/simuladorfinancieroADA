@@ -1361,6 +1361,78 @@ body {
   font-family: 'DM Sans', sans-serif;
 }
 .chart-btn-detail:hover { border-color: var(--ink); color: var(--ink); background: var(--surface); }
+
+/* ═══════════════════════════════════════════
+   REPORTE CONSOLIDADO STYLES
+═══════════════════════════════════════════ */
+.rc-step { display: none; }
+.rc-step.active { display: block; }
+
+.rc-steps-bar {
+  display: flex; align-items: center; gap: 0; margin-bottom: 28px;
+}
+.rc-step-dot {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 600; color: var(--ink-muted); white-space: nowrap;
+}
+.rc-step-dot .num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--surface-2); border: 2px solid var(--surface-3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; transition: var(--transition);
+}
+.rc-step-dot.active .num { background: var(--ink); border-color: var(--ink); color: var(--white); }
+.rc-step-dot.done .num   { background: var(--green); border-color: var(--green); color: var(--white); }
+.rc-step-line { flex: 1; height: 2px; background: var(--surface-3); margin: 0 8px; min-width: 20px; }
+.rc-step-dot.done + .rc-step-line { background: var(--green); }
+
+.rc-provider-block {
+  background: var(--surface); border: 1.5px solid var(--surface-3);
+  border-radius: var(--radius); padding: 16px; margin-bottom: 12px;
+}
+.rc-provider-block-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+}
+.rc-insumo-checkboxes { display: flex; flex-direction: column; gap: 6px; }
+.rc-insumo-check {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--ink-light); cursor: pointer;
+}
+.rc-insumo-check input[type=checkbox] { accent-color: var(--gold-dark); width: 15px; height: 15px; cursor: pointer; }
+
+.rc-equiv-row {
+  display: grid; grid-template-columns: 1fr 28px 1fr;
+  gap: 10px; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid var(--surface-2);
+}
+.rc-equiv-row:last-child { border-bottom: none; }
+.rc-equiv-arrow { text-align: center; color: var(--ink-muted); font-size: 14px; }
+
+.rc-report-section { margin-bottom: 28px; }
+.rc-report-section-title {
+  font-family: 'DM Serif Display', serif; font-size: 16px; color: var(--ink);
+  border-bottom: 2px solid var(--surface-3);
+  padding-bottom: 8px; margin-bottom: 12px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.rc-grand-total {
+  background: linear-gradient(135deg, rgba(45,106,79,0.08), rgba(45,106,79,0.03));
+  border: 1.5px solid var(--green-pale); border-radius: var(--radius);
+  padding: 20px 24px; display: flex; justify-content: space-between;
+  align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;
+}
+
+@media print {
+  body * { visibility: hidden; }
+  #print-area, #print-area * { visibility: visible; }
+  #print-area {
+    position: absolute; left: 0; top: 0; width: 100%;
+    font-family: 'DM Sans', sans-serif; color: #0f1117; padding: 32px;
+  }
+  .no-print { display: none !important; }
+  .detail-table th, .detail-table td { font-size: 11px; padding: 5px 8px; }
+}
+#print-area { display: none; }
 </style>
 </head>
 <body>
@@ -1500,6 +1572,9 @@ body {
               <option value="radar">En Radar</option>
               <option value="activo">Activo</option>
             </select>
+            <button class="btn btn-primary" onclick="openConsolidadoModal()" style="white-space:nowrap;">
+              📊 Reporte Consolidado
+            </button>
           </div>
         </div>
 
@@ -1850,6 +1925,74 @@ body {
     <div id="savings-detail-content"></div>
   </div>
 </div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL: REPORTE CONSOLIDADO (3 pasos)
+═══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-consolidado">
+  <div class="modal modal-lg" style="max-width:860px;">
+
+    <div class="modal-header" style="margin-bottom:8px;">
+      <div>
+        <h2 class="modal-title">📊 Reporte Consolidado de Ahorro</h2>
+        <p class="modal-subtitle" id="rc-subtitle">Selecciona proveedores e insumos para analizar</p>
+      </div>
+      <button class="modal-close no-print" onclick="closeModal('modal-consolidado')">×</button>
+    </div>
+
+    <!-- Steps bar -->
+    <div class="rc-steps-bar">
+      <div class="rc-step-dot active" id="rc-dot-1"><div class="num">1</div><span>Proveedores e insumos</span></div>
+      <div class="rc-step-line" id="rc-line-1"></div>
+      <div class="rc-step-dot" id="rc-dot-2"><div class="num">2</div><span>Equivalencias por sucursal</span></div>
+      <div class="rc-step-line" id="rc-line-2"></div>
+      <div class="rc-step-dot" id="rc-dot-3"><div class="num">3</div><span>Reporte</span></div>
+    </div>
+
+    <!-- PASO 1: Selección de proveedores e insumos -->
+    <div class="rc-step active" id="rc-step-1">
+      <p style="font-size:13px; color:var(--ink-muted); margin-bottom:16px;">
+        Selecciona uno o más proveedores y elige qué insumos incluir en el reporte.
+        Puedes combinar insumos de distintos proveedores.
+      </p>
+      <div id="rc-providers-list">
+        <div class="loading-state"><div class="loader"></div><span>Cargando proveedores...</span></div>
+      </div>
+    </div>
+
+    <!-- PASO 2: Equivalencias Centro ↔ Cibeles -->
+    <div class="rc-step" id="rc-step-2">
+      <p style="font-size:13px; color:var(--ink-muted); margin-bottom:4px;">
+        Para cada insumo seleccionado, indica cuál es su equivalente en cada sucursal.
+        Esto permite sumar el ahorro de ambas bases de datos aunque tengan IDs distintos.
+        <strong>Las equivalencias se guardan automáticamente.</strong>
+      </p>
+      <div style="display:grid; grid-template-columns:1fr 28px 1fr; gap:10px; margin:16px 0 8px; padding-bottom:8px; border-bottom:2px solid var(--surface-3);">
+        <div style="font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--blue-light);">🏢 Sucursal Centro</div>
+        <div></div>
+        <div style="font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--green);">🏢 Sucursal Cibeles</div>
+      </div>
+      <div id="rc-equiv-list"></div>
+    </div>
+
+    <!-- PASO 3: Reporte -->
+    <div class="rc-step" id="rc-step-3">
+      <div id="rc-report-content">
+        <div class="loading-state"><div class="loader"></div><span>Generando reporte...</span></div>
+      </div>
+    </div>
+
+    <!-- Footer buttons -->
+    <div class="modal-footer no-print" style="margin-top:24px;">
+      <button class="btn btn-ghost" id="rc-btn-back" onclick="rcStep('back')" style="display:none;">← Atrás</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-consolidado')" id="rc-btn-cancel">Cancelar</button>
+      <button class="btn btn-gold" id="rc-btn-next" onclick="rcStep('next')">Continuar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden print area -->
+<div id="print-area"></div>
 
 <script>
 // ═══════════════════════════════════════════
@@ -3387,6 +3530,472 @@ function changeModalHorizon(h) {
   if (label) label.textContent = h + (h === 1 ? ' mes' : ' meses');
   openSavingsDetail();
   if (chartState.loaded) drawChart();
+}
+
+// ═══════════════════════════════════════════
+// REPORTE CONSOLIDADO
+// ═══════════════════════════════════════════
+
+let rcState = {
+  step: 1,
+  // selections: [{ providerId, providerName, insumos: [{ clave, desc, unidad, precioBase, sucursal }] }]
+  selections: [],
+  // equivs: [{ label, centro: { clave, desc }, cibeles: { clave, desc } }]
+  equivs: [],
+  horizon: 1,
+};
+
+// ── Open modal ──
+async function openConsolidadoModal() {
+  rcState = { step: 1, selections: [], equivs: [], horizon: 1 };
+  rcUpdateStepUI();
+  openModal('modal-consolidado');
+  await rcLoadStep1();
+}
+
+// ── Step navigation ──
+async function rcStep(dir) {
+  if (dir === 'next') {
+    if (rcState.step === 1) {
+      if (!rcCollectStep1()) return;
+      rcState.step = 2;
+      await rcBuildStep2();
+    } else if (rcState.step === 2) {
+      if (!rcCollectStep2()) return;
+      rcState.step = 3;
+      await rcBuildReport();
+    }
+  } else {
+    rcState.step = Math.max(1, rcState.step - 1);
+    if (rcState.step === 1) await rcLoadStep1();
+    if (rcState.step === 2) await rcBuildStep2();
+  }
+  rcUpdateStepUI();
+}
+
+function rcUpdateStepUI() {
+  [1, 2, 3].forEach(i => {
+    document.getElementById(`rc-step-${i}`).classList.toggle('active', i === rcState.step);
+    const dot = document.getElementById(`rc-dot-${i}`);
+    dot.classList.toggle('active', i === rcState.step);
+    dot.classList.toggle('done', i < rcState.step);
+    const line = document.getElementById(`rc-line-${i}`);
+    if (line) line.style.background = i < rcState.step ? 'var(--green)' : 'var(--surface-3)';
+  });
+
+  document.getElementById('rc-btn-back').style.display = rcState.step > 1 ? 'inline-flex' : 'none';
+  const nextBtn = document.getElementById('rc-btn-next');
+  const cancelBtn = document.getElementById('rc-btn-cancel');
+
+  if (rcState.step === 3) {
+    nextBtn.style.display = 'none';
+    cancelBtn.textContent = 'Cerrar';
+  } else {
+    nextBtn.style.display = 'inline-flex';
+    nextBtn.textContent = rcState.step === 2 ? '📊 Generar Reporte →' : 'Continuar →';
+    cancelBtn.textContent = 'Cancelar';
+  }
+
+  const subtitles = [
+    'Selecciona proveedores e insumos para analizar',
+    'Define equivalencias entre sucursales',
+    'Ahorro histórico y proyectado consolidado'
+  ];
+  document.getElementById('rc-subtitle').textContent = subtitles[rcState.step - 1];
+}
+
+// ── PASO 1: cargar proveedores con sus insumos ──
+async function rcLoadStep1() {
+  const container = document.getElementById('rc-providers-list');
+  container.innerHTML = '<div class="loading-state"><div class="loader"></div><span>Cargando...</span></div>';
+
+  // Reuse already-loaded radarProviders; fetch detail per provider for insumos
+  if (!radarProviders.length) await loadRadarProviders();
+
+  // Build HTML: one block per provider
+  const blocks = await Promise.all(radarProviders.map(async p => {
+    // Try to get insumos from already-loaded detail, or fetch
+    let insumos = [];
+    try {
+      const res = await fetch(`${APPS_SCRIPT_URL}?action=getProviderDetail&id=${p.id}`);
+      const data = await res.json();
+      insumos = data.insumos || [];
+    } catch(e) { insumos = []; }
+
+    if (insumos.length === 0) return ''; // skip providers with no insumos
+
+    const checks = insumos.map(ins => `
+      <label class="rc-insumo-check">
+        <input type="checkbox" class="rc-insumo-cb" data-pid="${p.id}" data-pname="${p.nombre}"
+               data-clave="${ins.clave}" data-desc="${ins.desc || ins.clave}"
+               data-unidad="${ins.unidad || ''}" data-precio-base="${ins.precioBase || 0}"
+               data-sucursal="${ins.sucursal || p.sucursal || 'Cibeles'}">
+        <span>${ins.desc || ins.clave} <span style="color:var(--ink-muted);font-size:11px;">(${ins.unidad || ''})</span></span>
+      </label>`).join('');
+
+    return `
+    <div class="rc-provider-block">
+      <div class="rc-provider-block-header">
+        <div>
+          <span style="font-family:'DM Serif Display',serif; font-size:15px;">${p.nombre}</span>
+          <span class="badge badge-gray" style="margin-left:8px;">📍 ${p.sucursal || '—'}</span>
+        </div>
+        <label class="rc-insumo-check" style="font-size:12px; color:var(--ink-muted);">
+          <input type="checkbox" onchange="rcToggleAll(this,'${p.id}')"> Todos
+        </label>
+      </div>
+      <div class="rc-insumo-checkboxes">${checks}</div>
+    </div>`;
+  }));
+
+  container.innerHTML = blocks.filter(Boolean).join('') ||
+    '<div class="empty-state"><div class="empty-icon">📦</div><h3 class="empty-title">Sin proveedores con insumos</h3></div>';
+}
+
+function rcToggleAll(masterCb, pid) {
+  document.querySelectorAll(`.rc-insumo-cb[data-pid="${pid}"]`).forEach(cb => cb.checked = masterCb.checked);
+}
+
+function rcCollectStep1() {
+  const checked = [...document.querySelectorAll('.rc-insumo-cb:checked')];
+  if (checked.length === 0) { showToast('Selecciona al menos un insumo', 'error'); return false; }
+
+  // Group by provider
+  const byProvider = {};
+  checked.forEach(cb => {
+    const pid = cb.dataset.pid;
+    if (!byProvider[pid]) byProvider[pid] = { providerId: pid, providerName: cb.dataset.pname, insumos: [] };
+    byProvider[pid].insumos.push({
+      clave:      cb.dataset.clave,
+      desc:       cb.dataset.desc,
+      unidad:     cb.dataset.unidad,
+      precioBase: parseFloat(cb.dataset.precioBase) || 0,
+      sucursal:   cb.dataset.sucursal,
+    });
+  });
+
+  rcState.selections = Object.values(byProvider);
+  return true;
+}
+
+// ── PASO 2: equivalencias Centro ↔ Cibeles ──
+async function rcBuildStep2() {
+  const container = document.getElementById('rc-equiv-list');
+  container.innerHTML = '<div class="loading-state"><div class="loader"></div><span>Cargando catálogos y equivalencias guardadas...</span></div>';
+
+  // Ensure both catalogs are loaded
+  if (!catalogoCentro.length)  await loadCatalogForSucursal('Centro');
+  if (!catalogoCibeles.length) await loadCatalogForSucursal('Cibeles');
+
+  // Load saved equivalences from Sheets
+  let savedEquivs = {};
+  try {
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=getEquivalencias`);
+    const data = await res.json();
+    (data.equivalencias || []).forEach(e => { savedEquivs[e.key] = e; });
+  } catch(e) { /* no saved equivs yet */ }
+
+  // Build one row per selected insumo
+  const allInsumos = rcState.selections.flatMap(s =>
+    s.insumos.map(ins => ({ ...ins, providerName: s.providerName, providerId: s.providerId }))
+  );
+
+  const makeOptions = (catalog, selectedClave) =>
+    `<option value="">— Ninguno —</option>` +
+    catalog.map(c => `<option value="${c.clave}" ${c.clave === selectedClave ? 'selected' : ''}>${c.descripcion}</option>`).join('');
+
+  const rows = allInsumos.map((ins, idx) => {
+    const key = `${ins.providerId}_${ins.clave}`;
+    const saved = savedEquivs[key] || {};
+    const savedCentro  = saved.claveCentro  || (ins.sucursal === 'Centro'  ? ins.clave : '');
+    const savedCibeles = saved.claveCibeles || (ins.sucursal === 'Cibeles' ? ins.clave : '');
+
+    return `
+    <div class="rc-equiv-row">
+      <div>
+        <div style="font-size:11px; font-weight:700; color:var(--ink-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px;">Centro</div>
+        <select class="field-select" id="rc-eq-centro-${idx}" style="font-size:12px;">
+          ${makeOptions(catalogoCentro, savedCentro)}
+        </select>
+      </div>
+      <div class="rc-equiv-arrow">⇔</div>
+      <div>
+        <div style="font-size:11px; font-weight:700; color:var(--ink-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px;">Cibeles</div>
+        <select class="field-select" id="rc-eq-cibeles-${idx}" style="font-size:12px;">
+          ${makeOptions(catalogoCibeles, savedCibeles)}
+        </select>
+      </div>
+    </div>
+    <div style="padding:6px 0 10px; font-size:12px; color:var(--ink-light);">
+      <strong>${ins.providerName}</strong> · ${ins.desc}
+      <span class="badge badge-gray" style="margin-left:6px;">${ins.unidad}</span>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = rows;
+}
+
+async function loadCatalogForSucursal(sucursal) {
+  try {
+    const sheetName = `Rendimientos_${sucursal}`;
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=getCatalog&sheet=${sheetName}`);
+    const data = await res.json();
+    const items = (data.items || []).sort((a, b) =>
+      String(a.descripcion).localeCompare(String(b.descripcion), 'es', { sensitivity: 'base' }));
+    if (sucursal === 'Centro')  catalogoCentro  = items;
+    if (sucursal === 'Cibeles') catalogoCibeles = items;
+  } catch(e) { /* silent */ }
+}
+
+function rcCollectStep2() {
+  const allInsumos = rcState.selections.flatMap(s =>
+    s.insumos.map(ins => ({ ...ins, providerId: s.providerId, providerName: s.providerName }))
+  );
+
+  rcState.equivs = allInsumos.map((ins, idx) => {
+    const claveCentro  = document.getElementById(`rc-eq-centro-${idx}`)?.value  || '';
+    const claveCibeles = document.getElementById(`rc-eq-cibeles-${idx}`)?.value || '';
+    const descCentro   = catalogoCentro.find(c => c.clave === claveCentro)?.descripcion  || claveCentro;
+    const descCibeles  = catalogoCibeles.find(c => c.clave === claveCibeles)?.descripcion || claveCibeles;
+    return {
+      key: `${ins.providerId}_${ins.clave}`,
+      providerId:   ins.providerId,
+      providerName: ins.providerName,
+      desc:         ins.desc,
+      unidad:       ins.unidad,
+      precioBase:   ins.precioBase,
+      claveCentro, descCentro,
+      claveCibeles, descCibeles,
+    };
+  });
+
+  if (rcState.equivs.every(e => !e.claveCentro && !e.claveCibeles)) {
+    showToast('Asigna al menos una sucursal para cada insumo', 'error');
+    return false;
+  }
+
+  // Save equivalences to Sheets asynchronously (fire-and-forget)
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'saveEquivalencias', equivalencias: rcState.equivs })
+  }).catch(() => {});
+
+  return true;
+}
+
+// ── PASO 3: Generar reporte ──
+async function rcBuildReport() {
+  document.getElementById('rc-report-content').innerHTML =
+    '<div class="loading-state"><div class="loader"></div><span>Cargando historial de compras...</span></div>';
+
+  const horizon = rcState.horizon;
+
+  // Fetch purchase history for every unique clave+sucursal combination
+  const claveSet = new Set();
+  rcState.equivs.forEach(e => {
+    if (e.claveCentro)  claveSet.add(`${e.claveCentro}|Centro`);
+    if (e.claveCibeles) claveSet.add(`${e.claveCibeles}|Cibeles`);
+  });
+
+  const histCache = {};
+  await Promise.all([...claveSet].map(async key => {
+    const [clave, suc] = key.split('|');
+    try {
+      const res = await fetch(`${APPS_SCRIPT_URL}?action=getPurchaseHistory&idinsumo=${encodeURIComponent(clave)}&sucursal=${encodeURIComponent(suc)}`);
+      const data = await res.json();
+      histCache[key] = (data.purchases || []).sort((a, b) => a.fecha.localeCompare(b.fecha));
+    } catch(e) { histCache[key] = []; }
+  }));
+
+  // Build per-equiv report sections
+  let grandHistTotal = 0, grandProjTotal = 0;
+  let allSectionsHTML = '';
+
+  rcState.equivs.forEach(eq => {
+    const histCentro  = eq.claveCentro  ? (histCache[`${eq.claveCentro}|Centro`]  || []) : [];
+    const histCibeles = eq.claveCibeles ? (histCache[`${eq.claveCibeles}|Cibeles`] || []) : [];
+
+    // Build merged rows: tag each purchase with its sucursal
+    const toRows = (hist, sucursal) => hist.map((p, i) => ({
+      numero:    p.folio || (i + 1),
+      fecha:     p.fecha,
+      sucursal,
+      proveedor: p.proveedor || '—',
+      cantidad:  p.cantidad  || 0,
+      precioUnit: p.precioUnit || 0,
+      montoProv:  (p.cantidad || 0) * (p.precioUnit || 0),
+      montoNuevo: (p.cantidad || 0) * (eq.precioBase || 0),
+      proyectado: false,
+    }));
+
+    const rowsCentro  = toRows(histCentro,  'Centro');
+    const rowsCibeles = toRows(histCibeles, 'Cibeles');
+    const allReal = [...rowsCentro, ...rowsCibeles]
+      .sort((a, b) => a.fecha.localeCompare(b.fecha));
+
+    // Projections: one per sucursal, then merge
+    const project = (rows, sucursal) => {
+      if (rows.length === 0) return [];
+      const last3 = rows.slice(-3);
+      const avgQty = last3.reduce((a, r) => a + r.cantidad, 0) / last3.length;
+      const lastPrecioUnit = rows[rows.length - 1].precioUnit;
+      const avgInterval = last3.length >= 2
+        ? (new Date(last3[last3.length-1].fecha) - new Date(last3[0].fecha)) / (last3.length - 1)
+        : 30 * 24 * 3600 * 1000;
+      const safe = (avgInterval > 0 && isFinite(avgInterval)) ? avgInterval : 30 * 24 * 3600 * 1000;
+      const perMonth = Math.max(1, Math.round(30 * 24 * 3600 * 1000 / safe));
+      const total = Math.max(horizon * perMonth, horizon);
+      const lastDate = new Date(rows[rows.length - 1].fecha);
+      const lastProv = rows[rows.length - 1].proveedor;
+      return Array.from({ length: total }, (_, i) => ({
+        numero: 'P' + (i + 1),
+        fecha: new Date(lastDate.getTime() + (i + 1) * safe).toISOString().split('T')[0],
+        sucursal,
+        proveedor: lastProv,
+        cantidad: avgQty,
+        precioUnit: lastPrecioUnit,
+        montoProv: avgQty * lastPrecioUnit,
+        montoNuevo: avgQty * (eq.precioBase || 0),
+        proyectado: true,
+      }));
+    };
+
+    const projCentro  = project(rowsCentro,  'Centro');
+    const projCibeles = project(rowsCibeles, 'Cibeles');
+    const allProj = [...projCentro, ...projCibeles]
+      .sort((a, b) => (a.fecha > b.fecha ? 1 : -1));
+
+    const allRows = [...allReal, ...allProj];
+
+    const histSav = allReal.reduce((a, r) => a + Math.max(0, r.montoProv - r.montoNuevo), 0);
+    const projSav = allProj.reduce((a, r) => a + Math.max(0, r.montoProv - r.montoNuevo), 0);
+    grandHistTotal += histSav;
+    grandProjTotal += projSav;
+
+    let acum = 0;
+    const tableRows = allRows.map(r => {
+      const ahorro = Math.max(0, r.montoProv - r.montoNuevo);
+      acum += ahorro;
+      const sucBadge = r.sucursal === 'Centro'
+        ? `<span class="badge badge-blue" style="font-size:10px;">Centro</span>`
+        : `<span class="badge badge-green" style="font-size:10px;">Cibeles</span>`;
+      const proy = r.proyectado ? '<span class="proy-badge">PROYEC.</span>' : '';
+      return `<tr class="${r.proyectado ? 'proyectado-row' : ''}">
+        <td>${r.numero}${proy}</td>
+        <td>${r.fecha instanceof Date ? r.fecha.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}) : r.fecha}</td>
+        <td>${sucBadge}</td>
+        <td>${r.proveedor}</td>
+        <td>${formatNum(r.cantidad, 2)} ${eq.unidad}</td>
+        <td>$${formatNum(r.montoProv)}${r.proyectado ? ' <span style="font-size:10px;opacity:.5;">est.</span>' : ''}</td>
+        <td>$${formatNum(r.montoNuevo)}${r.proyectado ? ' <span style="font-size:10px;opacity:.5;">est.</span>' : ''}</td>
+        <td class="col-saving">$${formatNum(ahorro)}</td>
+        <td class="col-acum">$${formatNum(acum)}</td>
+      </tr>`;
+    }).join('');
+
+    allSectionsHTML += `
+    <div class="rc-report-section">
+      <div class="rc-report-section-title">
+        <span>${eq.desc} <span class="badge badge-gray" style="margin-left:6px;">${eq.unidad}</span></span>
+        <span style="font-size:13px; font-weight:400; color:var(--green);">Ahorro total: <strong>$${formatNum(histSav + projSav)}</strong></span>
+      </div>
+      <div style="display:flex; gap:12px; font-size:12px; margin-bottom:10px; flex-wrap:wrap;">
+        ${eq.claveCentro  ? `<span style="color:var(--blue-light);">Centro: <strong>${eq.descCentro}</strong></span>` : ''}
+        ${eq.claveCentro && eq.claveCibeles ? '<span style="color:var(--ink-muted);">+</span>' : ''}
+        ${eq.claveCibeles ? `<span style="color:var(--green);">Cibeles: <strong>${eq.descCibeles}</strong></span>` : ''}
+      </div>
+      <div class="detail-table-wrap">
+        <table class="detail-table">
+          <thead><tr>
+            <th># Compra</th><th>Fecha</th><th>Sucursal</th><th>Proveedor</th><th>Cantidad</th>
+            <th>Monto pagado</th><th>Con nuevo prov.</th>
+            <th class="col-saving">Ahorro</th><th class="col-acum">Ahorro acum.</th>
+          </tr></thead>
+          <tbody>${tableRows || '<tr><td colspan="9" style="text-align:center;color:var(--ink-muted);padding:20px;">Sin historial</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>`;
+  });
+
+  const grandTotal = grandHistTotal + grandProjTotal;
+  const horizonLabel = horizon === 1 ? '1 mes' : `${horizon} meses`;
+
+  const reportHTML = `
+  <!-- KPI grand total -->
+  <div class="rc-grand-total">
+    <div>
+      <div style="font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--green); margin-bottom:4px;">Ahorro total consolidado</div>
+      <div style="font-family:'DM Serif Display',serif; font-size:32px; color:var(--green);">$${formatNum(grandTotal)}</div>
+      <div style="font-size:12px; color:var(--ink-muted);">Histórico + proyección a ${horizonLabel} · ${rcState.equivs.length} insumo${rcState.equivs.length !== 1 ? 's' : ''} · 2 sucursales</div>
+    </div>
+    <div class="stats-grid stats-grid-2 no-print" style="gap:12px;">
+      <div class="stat-card accent-blue" style="padding:12px 16px;">
+        <div class="stat-label">Ahorro histórico</div>
+        <div class="stat-value" style="font-size:20px; color:var(--blue-light);">$${formatNum(grandHistTotal)}</div>
+      </div>
+      <div class="stat-card accent-gold" style="padding:12px 16px;">
+        <div class="stat-label">Proyectado (${horizonLabel})</div>
+        <div class="stat-value" style="font-size:20px; color:var(--gold-dark);">$${formatNum(grandProjTotal)}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Horizon + export controls -->
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;" class="no-print">
+    <div style="display:flex; gap:6px; align-items:center;">
+      <span style="font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-muted);">Proyectar:</span>
+      <button class="horizon-btn rc-h-btn ${horizon===1?'active':''}" onclick="rcSetHorizon(1)">1 mes</button>
+      <button class="horizon-btn rc-h-btn ${horizon===3?'active':''}" onclick="rcSetHorizon(3)">3 meses</button>
+      <button class="horizon-btn rc-h-btn ${horizon===6?'active':''}" onclick="rcSetHorizon(6)">6 meses</button>
+      <button class="horizon-btn rc-h-btn ${horizon===12?'active':''}" onclick="rcSetHorizon(12)">12 meses</button>
+    </div>
+    <button class="btn btn-outline" onclick="rcExportPDF()" style="gap:6px;">
+      🖨️ Exportar PDF
+    </button>
+  </div>
+
+  <!-- Per-insumo sections -->
+  ${allSectionsHTML}`;
+
+  document.getElementById('rc-report-content').innerHTML = reportHTML;
+
+  // Also populate hidden print area
+  rcPreparePrintArea(grandTotal, grandHistTotal, grandProjTotal, horizonLabel, allSectionsHTML);
+}
+
+function rcSetHorizon(h) {
+  rcState.horizon = h;
+  rcBuildReport();
+}
+
+function rcPreparePrintArea(grandTotal, grandHistTotal, grandProjTotal, horizonLabel, sectionsHTML) {
+  const now = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
+  document.getElementById('print-area').innerHTML = `
+  <div style="margin-bottom:24px; border-bottom:2px solid #0f1117; padding-bottom:16px;">
+    <div style="font-family:serif; font-size:22px; font-weight:700; margin-bottom:4px;">Reporte Consolidado de Ahorro</div>
+    <div style="font-size:13px; color:#555;">Generado el ${now} · Proyección: ${horizonLabel} · ${rcState.equivs.length} insumos · 2 sucursales</div>
+  </div>
+  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:24px;">
+    <div style="border:1px solid #ccc; border-radius:8px; padding:14px;">
+      <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#555; margin-bottom:6px;">Ahorro histórico</div>
+      <div style="font-size:22px; font-weight:700;">$${formatNum(grandHistTotal)}</div>
+    </div>
+    <div style="border:1px solid #ccc; border-radius:8px; padding:14px;">
+      <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#555; margin-bottom:6px;">Proyectado (${horizonLabel})</div>
+      <div style="font-size:22px; font-weight:700;">$${formatNum(grandProjTotal)}</div>
+    </div>
+    <div style="border:2px solid #2d6a4f; border-radius:8px; padding:14px; background:#f0faf4;">
+      <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#2d6a4f; margin-bottom:6px;">Total consolidado</div>
+      <div style="font-size:22px; font-weight:700; color:#2d6a4f;">$${formatNum(grandTotal)}</div>
+    </div>
+  </div>
+  ${sectionsHTML}`;
+}
+
+function rcExportPDF() {
+  document.getElementById('print-area').style.display = 'block';
+  window.print();
+  setTimeout(() => { document.getElementById('print-area').style.display = 'none'; }, 500);
 }
 
 // Close modals on overlay click
