@@ -3794,6 +3794,8 @@ async function rcBuildReport() {
 
   // Build per-equiv report sections
   let grandHistTotal = 0, grandProjTotal = 0;
+  let grandSpendHistProv = 0, grandSpendProjProv = 0;
+  let grandSpendHistNuevo = 0, grandSpendProjNuevo = 0;
   let allSectionsHTML = '';
 
   rcState.equivs.forEach(eq => {
@@ -3857,6 +3859,12 @@ async function rcBuildReport() {
     grandHistTotal += histSav;
     grandProjTotal += projSav;
 
+    // Accumulate spend totals
+    grandSpendHistProv  += allReal.reduce((a, r) => a + r.montoProv,  0);
+    grandSpendProjProv  += allProj.reduce((a, r) => a + r.montoProv,  0);
+    grandSpendHistNuevo += allReal.reduce((a, r) => a + r.montoNuevo, 0);
+    grandSpendProjNuevo += allProj.reduce((a, r) => a + r.montoNuevo, 0);
+
     let acum = 0;
     const tableRows = allRows.map(r => {
       const ahorro = Math.max(0, r.montoProv - r.montoNuevo);
@@ -3903,10 +3911,59 @@ async function rcBuildReport() {
   });
 
   const grandTotal = grandHistTotal + grandProjTotal;
+  const grandSpendProv  = grandSpendHistProv  + grandSpendProjProv;
+  const grandSpendNuevo = grandSpendHistNuevo + grandSpendProjNuevo;
   const horizonLabel = horizon === 1 ? '1 mes' : `${horizon} meses`;
 
+  // Build provider info cards for the bottom section
+  const providerSet = {};
+  rcState.selections.forEach(s => { providerSet[s.providerId] = s.providerName; });
+  const providerInfoHTML = rcState.selections.map(s => {
+    // Find provider detail from radarProviders cache
+    const p = radarProviders.find(r => r.id === s.providerId) || {};
+    const insumoList = s.insumos.map(i => `<span style="display:inline-block;padding:2px 8px;background:var(--surface-2);border-radius:12px;font-size:11px;margin:2px;">${i.desc}</span>`).join('');
+    return `
+    <div class="card" style="margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+        <div>
+          <div style="font-family:'DM Serif Display',serif; font-size:18px; margin-bottom:4px;">${s.providerName}</div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <span class="badge ${p.sucursal === 'Centro' ? 'badge-blue' : 'badge-green'}">📍 ${p.sucursal || '—'}</span>
+            <span class="badge ${p.estado === 'activo' ? 'badge-green' : 'badge-gold'}">${p.estado === 'activo' ? '✅ Activo' : '🎯 En Radar'}</span>
+            <span class="badge badge-gray">Riesgo: ${p.riesgo || 0}%</span>
+          </div>
+        </div>
+        <div style="font-size:12px; color:var(--ink-muted); text-align:right;">
+          ${p.contacto ? `<div>👤 ${p.contacto}</div>` : ''}
+          ${p.telefono ? `<div>📞 ${p.telefono}</div>` : ''}
+          ${p.email    ? `<div>✉️ ${p.email}</div>`    : ''}
+          ${p.whatsapp ? `<div>💬 ${p.whatsapp}</div>` : ''}
+        </div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-muted); margin-bottom:6px;">Insumos incluidos en este reporte</div>
+        <div>${insumoList}</div>
+      </div>
+      <div class="divider" style="margin:12px 0;"></div>
+      <div class="stats-grid stats-grid-3" style="gap:10px;">
+        ${[['Emite factura', p.factura], ['Ruta a sucursales', p.ruta], ['Entrega a puerta', p.entrega],
+           ['Logística inversa', p.logistica], ['Fabricante directo', p.marca], ['Referencias en zona', p.referencias]]
+          .map(([label, val]) => {
+            const ok = val === 'si' || val === true;
+            const no = val === 'no' || val === false;
+            return `<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-light);">
+              <div style="width:18px;height:18px;border-radius:50%;background:${ok?'var(--green-pale)':no?'var(--red-pale)':'var(--surface-2)'};color:${ok?'var(--green)':no?'var(--red)':'var(--ink-muted)'};display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;">${ok?'✓':no?'✗':'?'}</div>
+              ${label}
+            </div>`;
+          }).join('')}
+      </div>
+      ${p.leadtime ? `<div style="margin-top:10px;font-size:12px;color:var(--ink-muted);">⏱ Lead time: <strong>${p.leadtime} días</strong></div>` : ''}
+      ${p.notas ? `<div style="margin-top:10px;padding:8px 12px;background:var(--surface);border-radius:8px;font-size:12px;color:var(--ink-muted);">📝 ${p.notas}</div>` : ''}
+    </div>`;
+  }).join('');
+
   const reportHTML = `
-  <!-- KPI grand total -->
+  <!-- AHORROS: KPI grand total -->
   <div class="rc-grand-total">
     <div>
       <div style="font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--green); margin-bottom:4px;">Ahorro total consolidado</div>
@@ -3921,6 +3978,46 @@ async function rcBuildReport() {
       <div class="stat-card accent-gold" style="padding:12px 16px;">
         <div class="stat-label">Proyectado (${horizonLabel})</div>
         <div class="stat-value" style="font-size:20px; color:var(--gold-dark);">$${formatNum(grandProjTotal)}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPRAS: resumen de gasto -->
+  <div style="background:var(--surface); border:1px solid var(--surface-3); border-radius:var(--radius-lg); padding:20px 24px; margin-bottom:20px;">
+    <div style="font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-muted); margin-bottom:16px;">Resumen de compras — Gasto total</div>
+    <div class="stats-grid stats-grid-3" style="gap:12px; margin-bottom:16px;">
+      <div>
+        <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--ink-muted); margin-bottom:4px;">Proveedor actual — Histórico</div>
+        <div style="font-family:'DM Serif Display',serif; font-size:24px; color:var(--ink);">$${formatNum(grandSpendHistProv)}</div>
+        <div style="font-size:11px; color:var(--ink-muted);">Pagado en compras reales</div>
+      </div>
+      <div>
+        <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--ink-muted); margin-bottom:4px;">Proveedor actual — Proyectado</div>
+        <div style="font-family:'DM Serif Display',serif; font-size:24px; color:var(--ink);">$${formatNum(grandSpendProjProv)}</div>
+        <div style="font-size:11px; color:var(--ink-muted);">Estimado a ${horizonLabel}</div>
+      </div>
+      <div style="background:rgba(29,53,87,0.05); border-radius:var(--radius); padding:12px 14px;">
+        <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--blue); margin-bottom:4px;">Total proveedor actual</div>
+        <div style="font-family:'DM Serif Display',serif; font-size:24px; color:var(--blue);">$${formatNum(grandSpendProv)}</div>
+        <div style="font-size:11px; color:var(--ink-muted);">Histórico + proyección</div>
+      </div>
+    </div>
+    <div style="height:1px; background:var(--surface-3); margin:0 0 16px;"></div>
+    <div class="stats-grid stats-grid-3" style="gap:12px;">
+      <div>
+        <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--ink-muted); margin-bottom:4px;">Proveedor nuevo — Histórico</div>
+        <div style="font-family:'DM Serif Display',serif; font-size:24px; color:var(--green);">$${formatNum(grandSpendHistNuevo)}</div>
+        <div style="font-size:11px; color:var(--ink-muted);">Lo que hubiera costado</div>
+      </div>
+      <div>
+        <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--ink-muted); margin-bottom:4px;">Proveedor nuevo — Proyectado</div>
+        <div style="font-family:'DM Serif Display',serif; font-size:24px; color:var(--green);">$${formatNum(grandSpendProjNuevo)}</div>
+        <div style="font-size:11px; color:var(--ink-muted);">Estimado a ${horizonLabel}</div>
+      </div>
+      <div style="background:rgba(45,106,79,0.06); border-radius:var(--radius); padding:12px 14px;">
+        <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--green); margin-bottom:4px;">Total proveedor nuevo</div>
+        <div style="font-family:'DM Serif Display',serif; font-size:24px; color:var(--green);">$${formatNum(grandSpendNuevo)}</div>
+        <div style="font-size:11px; color:var(--ink-muted);">Histórico + proyección</div>
       </div>
     </div>
   </div>
@@ -3940,12 +4037,18 @@ async function rcBuildReport() {
   </div>
 
   <!-- Per-insumo sections -->
-  ${allSectionsHTML}`;
+  ${allSectionsHTML}
+
+  <!-- INFORMACIÓN DEL PROVEEDOR (al final) -->
+  <div style="margin-top:32px; padding-top:24px; border-top:2px solid var(--surface-3);">
+    <div style="font-family:'DM Serif Display',serif; font-size:18px; margin-bottom:16px; color:var(--ink);">Información del Proveedor</div>
+    ${providerInfoHTML}
+  </div>`;
 
   document.getElementById('rc-report-content').innerHTML = reportHTML;
 
   // Also populate hidden print area
-  rcPreparePrintArea(grandTotal, grandHistTotal, grandProjTotal, horizonLabel, allSectionsHTML);
+  rcPreparePrintArea(grandTotal, grandHistTotal, grandProjTotal, grandSpendProv, grandSpendNuevo, horizonLabel, allSectionsHTML, providerInfoHTML);
 }
 
 function rcSetHorizon(h) {
@@ -3953,14 +4056,14 @@ function rcSetHorizon(h) {
   rcBuildReport();
 }
 
-function rcPreparePrintArea(grandTotal, grandHistTotal, grandProjTotal, horizonLabel, sectionsHTML) {
+function rcPreparePrintArea(grandTotal, grandHistTotal, grandProjTotal, grandSpendProv, grandSpendNuevo, horizonLabel, sectionsHTML, providerInfoHTML) {
   const now = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
   document.getElementById('print-area').innerHTML = `
   <div style="margin-bottom:24px; border-bottom:2px solid #0f1117; padding-bottom:16px;">
     <div style="font-family:serif; font-size:22px; font-weight:700; margin-bottom:4px;">Reporte Consolidado de Ahorro</div>
     <div style="font-size:13px; color:#555;">Generado el ${now} · Proyección: ${horizonLabel} · ${rcState.equivs.length} insumos · 2 sucursales</div>
   </div>
-  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:24px;">
+  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:20px;">
     <div style="border:1px solid #ccc; border-radius:8px; padding:14px;">
       <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#555; margin-bottom:6px;">Ahorro histórico</div>
       <div style="font-size:22px; font-weight:700;">$${formatNum(grandHistTotal)}</div>
@@ -3970,11 +4073,25 @@ function rcPreparePrintArea(grandTotal, grandHistTotal, grandProjTotal, horizonL
       <div style="font-size:22px; font-weight:700;">$${formatNum(grandProjTotal)}</div>
     </div>
     <div style="border:2px solid #2d6a4f; border-radius:8px; padding:14px; background:#f0faf4;">
-      <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#2d6a4f; margin-bottom:6px;">Total consolidado</div>
+      <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#2d6a4f; margin-bottom:6px;">Total ahorros</div>
       <div style="font-size:22px; font-weight:700; color:#2d6a4f;">$${formatNum(grandTotal)}</div>
     </div>
   </div>
-  ${sectionsHTML}`;
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
+    <div style="border:1px solid #ccc; border-radius:8px; padding:14px;">
+      <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#555; margin-bottom:6px;">Gasto total — Proveedor actual</div>
+      <div style="font-size:22px; font-weight:700;">$${formatNum(grandSpendProv)}</div>
+    </div>
+    <div style="border:2px solid #2d6a4f; border-radius:8px; padding:14px; background:#f0faf4;">
+      <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#2d6a4f; margin-bottom:6px;">Gasto total — Proveedor nuevo</div>
+      <div style="font-size:22px; font-weight:700; color:#2d6a4f;">$${formatNum(grandSpendNuevo)}</div>
+    </div>
+  </div>
+  ${sectionsHTML}
+  <div style="margin-top:32px; padding-top:20px; border-top:2px solid #ccc;">
+    <div style="font-family:serif; font-size:18px; font-weight:700; margin-bottom:16px;">Información del Proveedor</div>
+    ${providerInfoHTML}
+  </div>`;
 }
 
 function rcExportPDF() {
